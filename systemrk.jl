@@ -1,22 +1,36 @@
-function SystemRK(m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h)
-	 	      	      #= This first section of code serves to set the initial conditions and prepare the variables for the upcoming loop=#
-#Is this working
-                                 x₁ = x₁0
-                                 y₁ = y₁0
-                                 v₁ = v₁0
-                                 w₁ = w₁0
-                                 x₂ = x₂0
+function fileInput(file)
+#= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
+
+       fileText = readlines(file)
+       m₁ = fileText[1][2] #skipping open bracket, then skipping commas
+       m₂ = fileText[1][4]
+       x₁0 = fileText[1][6]
+       y₁0 = fileText[1][8]
+       v₁0 = fileText[1][10]
+       w₁0 = fileText[1][12]
+       x₂0 = fileText[1][14]
+       y₂0 = fileText[1][16]
+       v₂0 = fileText[1][18]
+       w₂0 = fileText[1][20]
+       t = fileText[1][22]
+       h = fileText[1][24]
+       return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h
+       end
+
+function SystemRK(file)
+#= This first section of code serves to set the initial conditions and prepare the variables for the upcoming loop=#
+       m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h = fileInput(file)
+       x₁ = x₁0
+       y₁ = y₁0
+       v₁ = v₁0
+       w₁ = w₁0
+       x₂ = x₂0
                                  y₂ = y₂0
                                  v₂ = v₂0
                                  w₂ = w₂0
 				 t0 = 0
-	
-				for i = 1:(t/h) #=The number of iterations depends on how many steps it takes to reach the desired time t=#
+                                 return RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #=numerically integrates the system=#
 
-                                	RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #=numerically integrates the system=#
-
-				end
-                                return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ #returns the desired values
 end
 
 function dEdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for v1
@@ -45,8 +59,11 @@ function dHdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for w2
 
 function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #numeric integrator
 
-                                 A1 = h * v₁ #change in x1
-                                 B1 = h * v₂ #change in x2
+       t0 = 0
+
+       for i = 1:(t/h) #=The number of iterations depends on how many steps it takes to reach the desired time t=#
+              A1 = h * v₁ #change in x1
+              B1 = h * v₂ #change in x2
                                  C1 = h * w₁ #change in y1
                                  D1 = h * w₂ #change in y2
                                  E1 = h * dEdt(x₁, x₂, y₁, y₂, m₁, m₂) #change in v1
@@ -88,5 +105,7 @@ function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, 
                                  w₂ = w₂ + (1.0/6.0)*(H1 + 2*H2 + 2*H3 + H4)
 
                                  t0 = t0 + h #time step
-                               
+                                 end
+                                      
+                                 return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ #returns the desired values
        end
