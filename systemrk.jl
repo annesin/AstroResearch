@@ -1,36 +1,45 @@
+import LinearAlgebra.cross
+
 function fileInput(file)
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
-
-       fileText = readlines(file)
-       m₁ = fileText[1][2] #skipping open bracket, then skipping commas
-       m₂ = fileText[1][4]
-       x₁0 = fileText[1][6]
-       y₁0 = fileText[1][8]
-       v₁0 = fileText[1][10]
-       w₁0 = fileText[1][12]
-       x₂0 = fileText[1][14]
-       y₂0 = fileText[1][16]
-       v₂0 = fileText[1][18]
-       w₂0 = fileText[1][20]
-       t = fileText[1][22]
-       h = fileText[1][24]
+       fileText = parse.(Float64,split(readlines(file)[1],","))
+       m₁ = fileText[1] 
+       m₂ = fileText[2]
+       x₁0 = fileText[3]
+       y₁0 = fileText[4]
+       v₁0 = fileText[5]
+       w₁0 = fileText[6]
+       x₂0 = fileText[7]
+       y₂0 = fileText[8]
+       v₂0 = fileText[9]
+       w₂0 = fileText[10]
+       t = fileText[11]
+       h = fileText[12]
        return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h
-
+       end
+    
 function SystemRK(file)
-#= This first section of code serves to set the initial conditions and prepare the variables for the upcoming loop=#
-       m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h = fileInput(file)
-       x₁ = x₁0
-       y₁ = y₁0
-       v₁ = v₁0
-       w₁ = w₁0
-       x₂ = x₂0
+
+                            m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h = fileInput(file)
+
+	 	      	      #= This first section of code serves to set the initial conditions and prepare the variables for the upcoming loop=#
+
+                                 x₁ = x₁0
+                                 y₁ = y₁0
+                                 v₁ = v₁0
+                                 w₁ = w₁0
+                                 x₂ = x₂0
                                  y₂ = y₂0
                                  v₂ = v₂0
                                  w₂ = w₂0
-				 t0 = 0
+				     t0 = 0
+                            Llist = [] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
 
-                                 return RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #=numerically integrates the system=#
-
+				for i = 1:(t/h) #=The number of iterations depends on how many steps it takes to reach the desired time t=#
+                                	x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, L = RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h, t0) #=numerically integrates the system=#
+                                   push!(Llist,L)
+				end
+                                return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ #returns the desired values
 end
 
 function dEdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for v1
@@ -57,13 +66,10 @@ function dHdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for w2
        return g/(r^3)
        end
 
-function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #numeric integrator
+function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h, t0) #numeric integrator
 
-       t0 = 0
-
-       for i = 1:(t/h) #=The number of iterations depends on how many steps it takes to reach the desired time t=#
-              A1 = h * v₁ #change in x1
-              B1 = h * v₂ #change in x2
+                                 A1 = h * v₁ #change in x1
+                                 B1 = h * v₂ #change in x2
                                  C1 = h * w₁ #change in y1
                                  D1 = h * w₂ #change in y2
                                  E1 = h * dEdt(x₁, x₂, y₁, y₂, m₁, m₂) #change in v1
@@ -104,7 +110,18 @@ function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, 
                                  w₁ = w₁ + (1.0/6.0)*(G1 + 2*G2 + 2*G3 + G4)
                                  w₂ = w₂ + (1.0/6.0)*(H1 + 2*H2 + 2*H3 + H4)
 
-                                 t0 = t0 + h #time step
-                                 end
-                                 return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ #returns the desired values
+                            r₁ = [x₁,y₁,0]
+                            r₂ = [x₂,y₂,0]
+
+                            V₁ = [v₁,w₁,0] #vector form of velocity
+                            V₂ = [v₂,w₂,0]
+
+                            L₁ = m₁ * (cross(r₁,V₁))
+                            L₂ = m₂ * (cross(r₂,V₂))
+                            L = L₁+L₂
+
+                            t0 = t0 + h #time step
+                                 
+                            return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, L
+                               
        end
