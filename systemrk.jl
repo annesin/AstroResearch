@@ -1,6 +1,6 @@
 function SystemRK(m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h)
 	 	      	      #= This first section of code serves to set the initial conditions and prepare the variables for the upcoming loop=#
-
+#Is this working
                                  x₁ = x₁0
                                  y₁ = y₁0
                                  v₁ = v₁0
