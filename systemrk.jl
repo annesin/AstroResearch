@@ -6,7 +6,7 @@ using PyPlot
 import matplotlib.pyplot
 plt = matplotlib.pyplot 
 =#
-G = 39.478
+G = 2945.49
 
 function fileInput(file)
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
@@ -64,25 +64,25 @@ function SystemRK(file)
 end
 
 function dEdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for v1
-       g = 39.478 * m₂ *(x₂-x₁)
+       g = G * m₂ *(x₂-x₁)
        r = ((x₂-x₁)^2 + (y₂-y₁)^2)^0.5
        return g/(r^3)
        end
 
  function dFdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for v2
-       g = 39.478 * m₁ *(x₁-x₂)
+       g = G * m₁ *(x₁-x₂)
        r = ((x₂-x₁)^2 + (y₂-y₁)^2)^0.5
        return g/(r^3)
        end
 
 function dGdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for w1
-       g = 39.478 * m₂ *(y₂-y₁)
+       g = G * m₂ *(y₂-y₁)
        r = ((x₂-x₁)^2 + (y₂-y₁)^2)^0.5
        return g/(r^3)
        end
 
 function dHdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for w2
-       g = 39.478 * m₁ *(y₁-y₂)
+       g = G * m₁ *(y₁-y₂)
        r = ((x₂-x₁)^2 + (y₂-y₁)^2)^0.5
        return g/(r^3)
        end

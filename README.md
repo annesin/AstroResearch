@@ -9,7 +9,7 @@ The .txt file must be in the following format:
   
   There are twelve elements (not in array, so no brackets) each seperated by a comma.
   
-  Mass in is units of solar mass, distances are in the units of AU, and time is in the units of years.
+  Masses are in units of solar mass, distances are in the units of solar radii, and time is in the units of days.
   
   The first parameter is the mass of the primary body.
   
@@ -36,4 +36,4 @@ The .txt file must be in the following format:
   The twelfth parameter is the time-step value.
   
   Example (using Sun-Jupiter system): 
-  1,0.0009543,-0.004965,0,0,-0.00263,5.2044,0,0,2.7552232,11.862,0.0002
+  1,0.0009543,-1.068,0,0,-0.001548,1119.12,0,0,1.62318,4332.71,1
