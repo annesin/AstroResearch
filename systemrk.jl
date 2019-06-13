@@ -4,7 +4,7 @@ using Pkg
 Pkg.add("PyPlot")
 using PyPlot 
 #import matplotlib.pyplot
-#plt = matplotlib.pyplot 
+#plt = matplotlib.pyplot Not sure why the program works without actually defining plt, but it does
 G = 2945.49
 
 function fileInput(file)
