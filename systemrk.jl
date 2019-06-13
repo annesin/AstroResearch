@@ -12,16 +12,22 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
        fileText = parse.(Float64,split(readlines(file)[1],",")) #change to 2
        m₁ = fileText[1] 
        m₂ = fileText[2]
-       x₁0 = fileText[3]
-       y₁0 = fileText[4]
-       v₁0 = fileText[5]
-       w₁0 = fileText[6]
-       x₂0 = fileText[7]
-       y₂0 = fileText[8]
-       v₂0 = fileText[9]
-       w₂0 = fileText[10]
-       t = fileText[11]
-       h = fileText[12] #remove timestep as a variable, decide based on parameters of system
+       a = fileText[3]
+       e = fileText[4]
+       t = fileText[5]
+       M = m₁+m₂ #total mass
+       a₁ = (a*m₂)/((1+e)*(m₁+m₂))
+       a₂ = (a*m₁)/((1+e)*(m₁+m₂))
+       x₁0 = -(a*m₂)/(m₁+m₂)
+       y₁0 = 0
+       v₁0 = 0
+       x₂0 = (a*m₁)/(m₁+m₂)
+       y₂0 = 0
+       v₂0 = 0
+       r = x₂0-x₁0
+       w₁0 = sqrt(((G*m₂^2)/((m₂-m₁)^2))*M*((2/r)-(1/a)))
+       w₂0 = -sqrt(((G*m₁^2)/((m₂-m₁)^2))*M*((2/r)-(1/a)))
+       h = fileText[6] #remove timestep as a variable, decide based on parameters of system 
        return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h
        end
     
