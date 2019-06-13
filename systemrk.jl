@@ -1,5 +1,5 @@
 import LinearAlgebra.cross
-#= Uncomment this to install matplotlib 
+#= Uncomment this to install matplotlib =#
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot 
@@ -145,8 +145,12 @@ end
 function Plot(file, color) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
        x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, X1, X2, Y1, Y2 = SystemRK(file)
        if color == "L"
+              L0 = Llist[1]
+              Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
               plt.plot(Llist) 
        elseif color == "E"
+              E0 = Elist[1]
+              Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
               plt.plot(Elist) #find out what the scale things are, actually change to deltaE/E0
        else
               plt.plot(X1,Y1,linestyle="solid",color="yellow")
