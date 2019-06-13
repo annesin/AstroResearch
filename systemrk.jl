@@ -7,9 +7,9 @@ using PyPlot
 #plt = matplotlib.pyplot Not sure why the program works without actually defining plt, but it does
 G = 2945.49
 
-function fileInput(file)
+function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
-       fileText = parse.(Float64,split(readlines(file)[1],","))
+       fileText = parse.(Float64,split(readlines(file)[1],",")) #change to 2
        m₁ = fileText[1] 
        m₂ = fileText[2]
        x₁0 = fileText[3]
@@ -21,13 +21,13 @@ function fileInput(file)
        v₂0 = fileText[9]
        w₂0 = fileText[10]
        t = fileText[11]
-       h = fileText[12]
+       h = fileText[12] #remove timestep as a variable, decide based on parameters of system
        return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h
        end
     
 function SystemRK(file)
 
-                            m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h = fileInput(file)
+                            m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h = fileInput(file) #change to reassignment
 
 	 	      	      #= This first section of code serves to set the initial conditions and prepare the variables for the upcoming loop=#
 
@@ -54,7 +54,7 @@ function SystemRK(file)
                                    push!(Elist,E)
                                    push!(X1,x₁)
                                    push!(X2,x₂)
-                                   push!(Y1,y₁)
+                                   push!(Y1,y₁) #move L ane E calculation up here
                                    push!(Y2,y₂)
 				end
                                    
@@ -156,7 +156,7 @@ function Plot(file, color) #plotting L, E, or positions over time, type "L" or "
        if color == "L"
               plt.plot(Llist) 
        elseif color == "E"
-              plt.plot(Elist)
+              plt.plot(Elist) #find out what the scale things are, actually change to deltaE/E0
        else
               plt.plot(X1,Y1,linestyle="solid",color="yellow")
               plt.plot(X2,Y2,linestyle="solid",color=color)
