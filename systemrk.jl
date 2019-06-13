@@ -1,11 +1,10 @@
 import LinearAlgebra.cross
-#= Uncomment this to install matplotlib 
+#= Uncomment this to install matplotlib =#
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot 
-import matplotlib.pyplot
-plt = matplotlib.pyplot 
-=#
+#import matplotlib.pyplot
+#plt = matplotlib.pyplot 
 G = 2945.49
 
 function fileInput(file)
