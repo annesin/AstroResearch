@@ -36,7 +36,23 @@ function SystemRK(file)
        Y2 = []
 
        for i = 1:(t/h) #=The number of iterations depends on how many steps it takes to reach the desired time t=#
-              x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, L, E = RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #=numerically integrates the system=#
+              x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ = RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #=numerically integrates the system=#
+
+              r₁ = [x₁,y₁,0]
+              r₂ = [x₂,y₂,0]
+              r = sqrt((x₁-x₂)^2+(y₁-y₂)^2) #distance between two bodies
+
+              V₁ = [v₁,w₁,0] #vector form of velocity
+              V₂ = [v₂,w₂,0]
+
+              L₁ = m₁ * (cross(r₁,V₁))
+              L₂ = m₂ * (cross(r₂,V₂))
+              L = L₁+L₂
+              K₁ = .5*m₁*(v₁^2+w₁^2) #kinetic energies
+              K₂ = .5*m₂*(v₂^2+w₂^2)
+              P = (-G*m₁*m₂)/r #gravitational potential
+              E = K₁ + K₂ + P #total energy
+              
               push!(Llist,L[3]) #we only add the z component to the list, since by right hand rule, the rotational momentum will always be in the z-direction
               push!(Elist,E)
               push!(X1,x₁)
@@ -116,23 +132,7 @@ function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, 
        v₂ = v₂ + (1.0/6.0)*(F1 + 2*F2 + 2*F3 + F4)
        w₁ = w₁ + (1.0/6.0)*(G1 + 2*G2 + 2*G3 + G4)
        w₂ = w₂ + (1.0/6.0)*(H1 + 2*H2 + 2*H3 + H4)
-
-       r₁ = [x₁,y₁,0]
-       r₂ = [x₂,y₂,0]
-       r = sqrt((x₁-x₂)^2+(y₁-y₂)^2) #distance between two bodies
-
-       V₁ = [v₁,w₁,0] #vector form of velocity
-       V₂ = [v₂,w₂,0]
-
-       L₁ = m₁ * (cross(r₁,V₁))
-       L₂ = m₂ * (cross(r₂,V₂))
-       L = L₁+L₂
-       K₁ = .5*m₁*(v₁^2+w₁^2) #kinetic energies
-       K₂ = .5*m₂*(v₂^2+w₂^2)
-       P = (-G*m₁*m₂)/r #gravitational potential
-       E = K₁ + K₂ + P #total energy
-              
-       return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, L, E
+       return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂
                                
 end
 
