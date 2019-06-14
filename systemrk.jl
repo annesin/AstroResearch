@@ -6,6 +6,7 @@ using PyPlot
 #import matplotlib.pyplot
 #plt = matplotlib.pyplot Not sure why the program works without actually defining plt, but it does=#
 G = 2945.49
+hParam = 0.001 #this helps decide what timestep to use when integrating values
 
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
@@ -16,23 +17,26 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
        e = fileText[4]
        t = fileText[5]
        M = m₁+m₂ #total mass
-       a₁ = (a*m₂)/((1+e)*(m₁+m₂))
-       a₂ = (a*m₁)/((1+e)*(m₁+m₂))
-       x₁0 = -(a*m₂)/(m₁+m₂)
+       a₁ = (a*m₂)/(m₁+m₂)
+       a₂ = (a*m₁)/(m₁+m₂)
+       x₁0 = -(a₁+a₁*e)
        y₁0 = 0
        v₁0 = 0
-       x₂0 = (a*m₁)/(m₁+m₂)
+       x₂0 = (a₂+a₂*e)
        y₂0 = 0
        v₂0 = 0
        r = x₂0-x₁0
-       w₁0 = sqrt(((G*m₂^2)/((m₂-m₁)^2))*M*((2/r)-(1/a)))
-       w₂0 = -sqrt(((G*m₁^2)/((m₂-m₁)^2))*M*((2/r)-(1/a)))
-       h = fileText[6] #remove timestep as a variable, decide based on parameters of system 
-       return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, h
+       v = sqrt(G*M*((2/r)-(1/a))) #reduced mass velocity
+       w₁0 = (v*m₂)/M
+       w₂0 = -(v*m₁)/M
+       if t == 0.0
+              t = 100*sqrt((a^3*4*pi^2)/(G*M)) #if no time is entered, then it just goes for 100 periods
+       end
+       return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, a
        end
     
 function SystemRK(file)
-       m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h = fileInput(file) #these are initial conditions read from the .txt file
+       m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, a = fileInput(file) #these are initial conditions read from the .txt file
   
        Llist = [] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
        Elist = [] #same, but for energy
@@ -41,7 +45,13 @@ function SystemRK(file)
        Y1 = []
        Y2 = []
 
-       for i = 1:(t/h) #=The number of iterations depends on how many steps it takes to reach the desired time t=#
+       t0 = 0
+
+       r = sqrt((x₁-x₂)^2+(y₁-y₂)^2) #distance between two bodies
+       v = sqrt(G*(m₁+m₂)*((2/r)-(1/a))) #velocity of reduced mass
+       h = hParam*(r/v) #this calculates the initial timestep
+
+       while t0<t #we now iterate t0 until we get to t. The number of steps we need to get there is unknown, since our timestep varies
               x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ = RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #=numerically integrates the system=#
 
               r₁ = [x₁,y₁,0]
@@ -58,7 +68,14 @@ function SystemRK(file)
               K₂ = .5*m₂*(v₂^2+w₂^2)
               P = (-G*m₁*m₂)/r #gravitational potential
               E = K₁ + K₂ + P #total energy
-              
+
+              r = sqrt((x₁-x₂)^2+(y₁-y₂)^2) #distance between two bodies
+              v = sqrt(G*(m₁+m₂)*(abs((2/r)-(1/a)))) #velocity of reduced mass, needed because if r is about 2a, then because of numerical error, the system may crash because of an imaginary result
+
+              h = hParam*(r/v) #this calculates the initial timestep
+
+              t0 += h
+
               push!(Llist,L[3]) #we only add the z component to the list, since by right hand rule, the rotational momentum will always be in the z-direction
               push!(Elist,E)
               push!(X1,x₁)
@@ -67,7 +84,7 @@ function SystemRK(file)
               push!(Y2,y₂)
        end
               
-
+              println("$t0 days later...")
               return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, X1, X2, Y1, Y2 #returns the desired values
 end
 
@@ -152,8 +169,21 @@ function Plot(file, color) #plotting L, E, or positions over time, type "L" or "
               E0 = Elist[1]
               Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
               plt.plot(Elist) #find out what the scale things are, actually change to deltaE/E0
+       elseif color == "EL"
+              L0 = Llist[1]
+              Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+              plt.plot(Llist,linestyle="solid",color="green") 
+              E0 = Elist[1]
+              Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+              plt.plot(Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
        else
-              plt.plot(X1,Y1,linestyle="solid",color="yellow")
+              plt.plot(X1,Y1,linestyle="solid",color="red")
               plt.plot(X2,Y2,linestyle="solid",color=color)
+              plt.axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
+              E0 = Elist[1]
+              L0 = Llist[1]
+              Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
+              Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+              println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
        end
 end
