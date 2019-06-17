@@ -1,2 +1,2 @@
-1,8,4.20984,0.99,0
+1,8,4.20984,0.5,0
 first mass, second mass, sum of semi-major axises, eccentricity, time
