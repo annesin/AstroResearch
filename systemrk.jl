@@ -177,9 +177,9 @@ function Plot(file, color) #plotting L, E, or positions over time, type "L" or "
               Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
               plt.plot(Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
        else
-              plt.plot(X1,Y1,linestyle="solid",color="red")
-              plt.plot(X2,Y2,linestyle="solid",color=color)
-              plt.axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
+              plot3D(X1,Y1,linestyle="solid",color="red")
+              plot3D(X2,Y2,linestyle="solid",color=color)
+              #axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
               E0 = Elist[1]
               L0 = Llist[1]
               Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
