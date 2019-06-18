@@ -40,6 +40,7 @@ function SystemRK(file)
   
        Llist = [] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
        Elist = [] #same, but for energy
+       Tlist = [] #keeps track of time independent of timestep
        X1 = [] #keeps track of the first body's x coordinate
        X2 = [] #similar for these
        Y1 = []
@@ -50,6 +51,8 @@ function SystemRK(file)
        r = sqrt((x₁-x₂)^2+(y₁-y₂)^2) #distance between two bodies
        v = sqrt(G*(m₁+m₂)*((2/r)-(1/a))) #velocity of reduced mass
        h = hParam*(r/v) #this calculates the initial timestep
+       hMax = h
+       hMin = h #these find the minima and maxima of the timestep interval
 
        while t0<t #we now iterate t0 until we get to t. The number of steps we need to get there is unknown, since our timestep varies
               x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ = RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, h) #=numerically integrates the system=#
@@ -73,11 +76,17 @@ function SystemRK(file)
               v = sqrt(G*(m₁+m₂)*(abs((2/r)-(1/a)))) #velocity of reduced mass, needed because if r is about 2a, then because of numerical error, the system may crash because of an imaginary result
 
               h = hParam*(r/v) #this calculates the initial timestep
+              if h > hMax
+                     hMax = h
+              elseif h < hMin
+                     hMin = h
+              end
 
               t0 += h
 
               push!(Llist,L[3]) #we only add the z component to the list, since by right hand rule, the rotational momentum will always be in the z-direction
               push!(Elist,E)
+              push!(Tlist,t0)
               push!(X1,x₁)
               push!(X2,x₂)
               push!(Y1,y₁) #move L ane E calculation up here
@@ -85,7 +94,8 @@ function SystemRK(file)
        end
               
               println("$t0 days later...")
-              return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, X1, X2, Y1, Y2 #returns the desired values
+              println("The timestep varied by $hMin to $hMax.")
+              return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, X1, X2, Y1, Y2 #returns the desired values
 end
 
 function dEdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for v1
@@ -160,26 +170,27 @@ function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, 
 end
 
 function Plot(file, color) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-       x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, X1, X2, Y1, Y2 = SystemRK(file)
+       x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, X1, X2, Y1, Y2 = SystemRK(file)
        if color == "L"
               L0 = Llist[1]
               Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              plt.plot(Llist) 
+              plt.plot(Tlist,Llist) 
        elseif color == "E"
               E0 = Elist[1]
               Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-              plt.plot(Elist) #find out what the scale things are, actually change to deltaE/E0
+              plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
        elseif color == "EL"
               L0 = Llist[1]
               Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              plt.plot(Llist,linestyle="solid",color="green") 
+              plt.plot(Tlist,Llist,linestyle="solid",color="green") 
               E0 = Elist[1]
               Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-              plt.plot(Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+              plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+              println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
        else
-              plot3D(X1,Y1,linestyle="solid",color="red")
-              plot3D(X2,Y2,linestyle="solid",color=color)
-              #axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
+              plt.plot(X1,Y1,linestyle="solid",color="red")
+              plt.plot(X2,Y2,linestyle="solid",color=color)
+              plt.axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
               E0 = Elist[1]
               L0 = Llist[1]
               Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
