@@ -55,7 +55,7 @@ function SystemRK(file)
        hMax = h
        hMin = h #these find the minima and maxima of the timestep interval
 
-       lList = [h] #!!testing length of timestep
+       lList = [h] #testing length of timestep
 
        r₁ = [x₁0,y₁0,0]
        r₂ = [x₂0,y₂0,0]

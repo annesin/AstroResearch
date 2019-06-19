@@ -1,3 +1,4 @@
-1,8,4.20984,0,0,0.0000001
-first mass, second mass, semi-major axis of system, eccentricity, time, acceptable deviation
-time = 0 means that the program will integrate the file for 100 periods
+1,0.000003003,0.00000003694
+0,0,0,0,0,0,215.032,0,0,0,3.7,0,215.585,0,0,0,3.826,0
+365,0.000001
+This is a Sun-Earth-Moon example
