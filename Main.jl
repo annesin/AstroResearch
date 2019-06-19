@@ -152,27 +152,27 @@ function Plot(file, color, equal=0) #plotting L, E, or positions over time, type
 			if numBodies == 4
 				plt.plot(X4,Y4,linestype="solid",color="green")
 			end
-			if equal != 0
+			if equal == 0
 				plt.axis("equal")
 			end
 		else
-			Axes3D.plot(X1,Y1,Z1,linestyle="solid",color="red")
-			Axes3D.plot(X2,Y2,Z2,linestyle="solid",color=color)
-			Axes3D.plot(X3,Y3,Z3,linestyle="solid",color="green")
+			plot3D(X1,Y1,Z1,linestyle="solid",color="red")
+			plot3D(X2,Y2,Z2,linestyle="solid",color=color)
+			plot3D(X3,Y3,Z3,linestyle="solid",color="green")
 			if numBodies == 4
-				Axes3D.plot(X4,Y4,linestype="solid",color="green")
+				plot3D(X4,Y4,linestype="solid",color="green")
 			end
-			if equal != 0
+			if equal == 0
 				maxPoint = maximum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
 				minPoint = minimum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
-				Axes3D.plot(minPoint,minPoint,minPoint)
-				Axes3D.plot(minPoint,minPoint,maxPoint)
-				Axes3D.plot(minPoint,maxPoint,minPoint)
-				Axes3D.plot(minPoint,maxPoint,maxPoint)
-				Axes3D.plot(maxPoint,minPoint,minPoint)
-				Axes3D.plot(maxPoint,minPoint,maxPoint)
-				Axes3D.plot(maxPoint,maxPoint,minPoint)
-				Axes3D.plot(maxPoint,maxPoint,maxPoint) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
+				scatter3D(minPoint,minPoint,minPoint,alpha=0)
+				scatter3D(minPoint,minPoint,maxPoint,alpha=0)
+				scatter3D(minPoint,maxPoint,minPoint,alpha=0)
+				scatter3D(minPoint,maxPoint,maxPoint,alpha=0)
+				scatter3D(maxPoint,minPoint,minPoint,alpha=0)
+				scatter3D(maxPoint,minPoint,maxPoint,alpha=0)
+				scatter3D(maxPoint,maxPoint,minPoint,alpha=0)
+				scatter3D(maxPoint,maxPoint,maxPoint,alpha=0) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
 			end
 		end
 			
