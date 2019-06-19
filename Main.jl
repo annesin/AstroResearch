@@ -1,3 +1,7 @@
+using Pkg
+Pkg.add("PyPlot")
+using PyPlot
+
 G = 2945.49
 
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
@@ -19,32 +23,76 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 			push!(mArray,0) #this is really three bodies, with the third body having 0 mass for the test particle
 		end
 	elseif numBodies == 4
-		push!(f, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C, f1D, f2D, f3D, f4D, f5D, f6D)
+		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C, f1D, f2D, f3D, f4D, f5D, f6D)
 	else
 		error("Check how many bodies you have. Something's not right. Number of positions are $numBodies while number of masses are $(length(mArray)).")
 	end
 		t = parse.(Float64,split(readlines(file)[3],","))[1]
 	dev = parse.(Float64,split(readlines(file)[3],","))[2]
-	return fArray,mArray,XArray,t,dev
+	return fArray, XArray, mArray, t, dev, numBodies
 end
 
-function System(f::Array{Function,1},x::Array{Float64,1}, m::Array{Float64,1}, t::Float64,  h::Float64)
+function System(file)
+	f, x, m, t, dev, numBodies = fileInput(file)
 
-	 t0 = 0
+	Llist = [] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
+	Elist = [] #same, but for energy
+	Tlist = [] #keeps track of time independent of timestep
+	X1 = [x[1]] #keeps track of the first body's x coordinate
+	X2 = [x[7]] #similar for these
+	X3 = [x[13]]
+	Y1 = [x[2]]
+	Y2 = [x[8]]
+	Y3 = [x[14]]
+	Z1 = [x[3]]
+	Z2 = [x[9]]
+	Z3 = [x[15]]
+	if numBodies == 4
+		X4 = [x[19]]
+		Y4 = [x[20]]
+		Z4 = [x[21]]
+	end
 
-#until the desired time has been reached, the code runs RK4
+	h = 0.0001 #this calculates the initial timestep
+	hMax = h
+	hMin = h #these find the minima and maxima of the timestep interval
 
-	 while t0 < t
+	lList = [h] #testing length of timestep
 
-	       x = RK4(f, x, m, h)
-	       t0 = t0 + h
-	       
-	 end
-	 return x
+	counter = 0 #this counter is in order to break the h calculation in case it gets stuck
 
+	t0 = 0
+
+	#until the desired time has been reached, the code runs RK4
+
+	while t0 < t
+		#we will add an adaptive timestep later
+		x = RK4(f, x, m, h)
+		t0 = t0 + h
+	    push!(lList,h)
+		push!(Tlist,t0)
+		push!(X1,x[1])
+		push!(X2,x[7])
+		push!(X3,x[13])
+		push!(Y1,x[2]) #move L ane E calculation up here
+		push!(Y2,x[8])
+		push!(Y3,x[14])
+		push!(Z1,x[3])
+		push!(Z2,x[9])
+		push!(Z3,x[15])
+		if numBodies == 4
+			push!(X4,x[19])
+			push!(Y4,x[20])
+			push!(Z4,x[21])
+		end
+	end
+	if numBodies == 3
+		X4, Y4, Z4 = [[],[],[]]
+	end
+	return x, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies
 end
 
-function RK4(f::Array{Function,1},x::Array{Float64,1}, m::Array{Float64,1}, h::Float64)
+function RK4(f,x,m,h)
 #Inputs are initial position array, mass array and step size h
 
     d=length(f)
@@ -76,8 +124,65 @@ function RK4(f::Array{Function,1},x::Array{Float64,1}, m::Array{Float64,1}, h::F
 
 end 
 
-function Main(file)
-	println("hey")
+function Plot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+	x, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies = System(file)
+	#=if color == "L"
+		   L0 = Llist[1]
+		   Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+		   plt.plot(Tlist,Llist) 
+	elseif color == "E"
+		   E0 = Elist[1]
+		   Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+		   plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
+	elseif color == "EL"
+		   L0 = Llist[1]
+		   Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+		   plt.plot(#=Tlist,=#Llist,linestyle="solid",color="green") 
+		   E0 = Elist[1]
+		   Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+		   plt.plot(#=Tlist,=#Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+		   println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+	elseif color == "time"
+		   plt.plot(lList,linestyle="solid",color="green")
+	else=#
+		if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
+			plt.plot(X1,Y1,linestyle="solid",color="red")
+			plt.plot(X2,Y2,linestyle="solid",color=color)
+			plt.plot(X3,Y3,linestyle="solid",color="green")
+			if numBodies == 4
+				plt.plot(X4,Y4,linestype="solid",color="green")
+			end
+			if equal != 0
+				plt.axis("equal")
+			end
+		else
+			Axes3D.plot(X1,Y1,Z1,linestyle="solid",color="red")
+			Axes3D.plot(X2,Y2,Z2,linestyle="solid",color=color)
+			Axes3D.plot(X3,Y3,Z3,linestyle="solid",color="green")
+			if numBodies == 4
+				Axes3D.plot(X4,Y4,linestype="solid",color="green")
+			end
+			if equal != 0
+				maxPoint = maximum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
+				minPoint = minimum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
+				Axes3D.plot(minPoint,minPoint,minPoint)
+				Axes3D.plot(minPoint,minPoint,maxPoint)
+				Axes3D.plot(minPoint,maxPoint,minPoint)
+				Axes3D.plot(minPoint,maxPoint,maxPoint)
+				Axes3D.plot(maxPoint,minPoint,minPoint)
+				Axes3D.plot(maxPoint,minPoint,maxPoint)
+				Axes3D.plot(maxPoint,maxPoint,minPoint)
+				Axes3D.plot(maxPoint,maxPoint,maxPoint) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
+			end
+		end
+			
+
+		#=E0 = Elist[1]
+		L0 = Llist[1]
+		Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
+		Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+		println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")=#
+	#end
 end
 
 function f0(x::Array{Float64,1}) #DE for Masses
