@@ -1,3 +1,3 @@
-1,8,4.20984,0,0
-first mass, second mass, semi-major axis of system, eccentricity, time
+1,8,4.20984,0,0,0.0000001
+first mass, second mass, semi-major axis of system, eccentricity, time, acceptable deviation
 time = 0 means that the program will integrate the file for 100 periods
