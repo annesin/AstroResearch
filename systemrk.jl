@@ -32,11 +32,11 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
        if t == 0.0
               t = 100*sqrt((a^3*4*pi^2)/(G*M)) #if no time is entered, then it just goes for 100 periods
        end
-       return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, a, hParam
+       return m₁, m₂, x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0, t, a, e, hParam #we have to pass e to save the file info under the right name
        end
     
 function SystemRK(file)
-       m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, a, hParam = fileInput(file) #these are initial conditions read from the .txt file
+       m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, a, e, hParam = fileInput(file) #these are initial conditions read from the .txt file
   
        Llist = [] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
        Elist = [] #same, but for energy
@@ -113,7 +113,7 @@ function SystemRK(file)
               
        println("$t0 days later...")
        println("The timestep varied by $hMin to $hMax.")
-       return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2 #returns the desired values
+       return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2, a, e, m₁, m₂, hParam #returns the desired values
 end
 
 function dEdt(x₁, x₂, y₁, y₂, m₁, m₂) #DE for v1
@@ -187,8 +187,8 @@ function RungeKutta(m₁, m₂, x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, 
                                
 end
 
-function Plot(file, color) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-       x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2 = SystemRK(file)
+function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+       x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2, a, e, m₁, m₂, hParam = SystemRK(file)
        if color == "L"
               L0 = Llist[1]
               Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
@@ -216,5 +216,10 @@ function Plot(file, color) #plotting L, E, or positions over time, type "L" or "
               Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
               Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
               println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+       end
+       if fileSave != 0 #so if we changed it from the default
+              open("h≈(r÷v) data files/$m₁,$m₂,$a,$e,$t,$hParam.txt","w") do f
+                     write(f, "$Llist\n","$Elist\n","Tlist\n","lList")
+              end
        end
 end
