@@ -69,6 +69,13 @@ function System(file)
 	while t0 < t
 		#we will add an adaptive timestep later
 		x = RK4(f, x, m, h)
+
+		V₁ = x[4]^2+x[5]^2+x[6]^2 #velocities of the massive bodies
+		V₂ = x[10]^2+x[11]^2+x[12]^2
+		V₃ = x[16]^2+x[17]^2+x[18]^2
+
+		
+
 		t0 = t0 + h #advances time
 	    push!(lList,h)
 		push!(Tlist,t0)
