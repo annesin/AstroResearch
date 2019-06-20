@@ -5,7 +5,7 @@ Pkg.add("PyPlot")
 using PyPlot 
 #import matplotlib.pyplot
 #plt = matplotlib.pyplot Not sure why the program works without actually defining plt, but it does=#
-G = 2945.49
+G = 2945.49 #gravitational constant
 hParam = 0.001 #this helps decide what timestep to use when integrating values
 
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
@@ -51,7 +51,7 @@ function SystemRK(file)
 
        r = sqrt((x₁0-x₂0)^2+(y₁0-y₂0)^2) #distance between two bodies
        v = sqrt(G*(m₁+m₂)*((2/r)-(1/a))) #velocity of reduced mass
-       h = 0.0001 #this calculates the initial timestep
+       h = hParam*(r/v) #this calculates the initial timestep
        hMax = h
        hMin = h #these find the minima and maxima of the timestep interval
 
