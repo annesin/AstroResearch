@@ -2,38 +2,39 @@ using Pkg
 Pkg.add("PyPlot")
 using PyPlot
 
-G = 2945.49
+G = 2945.49 #gravitational constant
 
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
-	fArray = []
+	fArray = [] #we need differential functions to calculate new positions and velocities with each timestep. These functions will be stored in this array. What functions are entered depends on how many bodies we are working with.
 
-	mArray = parse.(Float64,split(readlines(file)[1],",")) #change to 2
-	XArray = parse.(Float64,split(readlines(file)[2],","))
+	mArray = parse.(Float64,split(readlines(file)[1],",")) #this inputs the masses of the bodies
+	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial positions and velocities of the bodies
 
-	if length(XArray)%6 != 0
+	if length(XArray)%6 != 0 #this makes sure that each body has 6 entries: a position and velocity in the x, y, and z direction.
 		error("Invalid input: not enough positions and velocities for given number of masses.")
 	end
 
-	numBodies = length(XArray)/6
+	numBodies = length(XArray)/6 #this is different than the number of masses, because the test particle counts as a massless body here
 
-	if numBodies == 3
-		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C)
+	if numBodies == 3 #so, here, we either have three massive bodies or two massive bodies with a test particle
+		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C) #these are the functions we need for that
 		if length(mArray) == 2 #test particle with 2 numBodies
-			push!(mArray,0) #this is really three bodies, with the third body having 0 mass for the test particle
+			push!(mArray,0) #including the test particle as a third body with zero mass
 		end
-	elseif numBodies == 4
-		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C, f1D, f2D, f3D, f4D, f5D, f6D)
+	elseif numBodies == 4 #Main.jl cannot handle four massive bodies, so presumably, this is three massive bodies with a test particle
+		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C, f1D, f2D, f3D, f4D, f5D, f6D) #these are the functions we need
 	else
-		error("Check how many bodies you have. Something's not right. Number of positions are $numBodies while number of masses are $(length(mArray)).")
+		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. !!this should be implemented
 	end
-		t = parse.(Float64,split(readlines(file)[3],","))[1]
-	dev = parse.(Float64,split(readlines(file)[3],","))[2]
+	t = parse.(Float64,split(readlines(file)[3],","))[1]
+	dev = parse.(Float64,split(readlines(file)[3],","))[2] #these should be the elements of the third line of the .txt file
 	return fArray, XArray, mArray, t, dev, numBodies
 end
 
 function System(file)
-	f, x, m, t, dev, numBodies = fileInput(file)
+	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
+	f, x, m, t, dev, numBodies = fileInput(file) #gets info from file
 
 	Llist = [] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
 	Elist = [] #same, but for energy
@@ -53,7 +54,7 @@ function System(file)
 		Z4 = [x[21]]
 	end
 
-	h = 0.0001 #this calculates the initial timestep
+	h = 0.0001 #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 	hMax = h
 	hMin = h #these find the minima and maxima of the timestep interval
 
@@ -68,13 +69,13 @@ function System(file)
 	while t0 < t
 		#we will add an adaptive timestep later
 		x = RK4(f, x, m, h)
-		t0 = t0 + h
+		t0 = t0 + h #advances time
 	    push!(lList,h)
 		push!(Tlist,t0)
 		push!(X1,x[1])
 		push!(X2,x[7])
 		push!(X3,x[13])
-		push!(Y1,x[2]) #move L ane E calculation up here
+		push!(Y1,x[2]) 
 		push!(Y2,x[8])
 		push!(Y3,x[14])
 		push!(Z1,x[3])
@@ -87,7 +88,7 @@ function System(file)
 		end
 	end
 	if numBodies == 3
-		X4, Y4, Z4 = [[],[],[]]
+		X4, Y4, Z4 = [[],[],[]] #so, if we only have three bodies, we just return empty arrays for these to make julia happy
 	end
 	return x, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies
 end
@@ -126,6 +127,7 @@ end
 
 function Plot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	x, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies = System(file)
+	#= these will be implemented once we figure out how to calculate E and L=#
 	#=if color == "L"
 		   L0 = Llist[1]
 		   Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
@@ -152,7 +154,7 @@ function Plot(file, color, equal=0) #plotting L, E, or positions over time, type
 			if numBodies == 4
 				plt.plot(X4,Y4,linestype="solid",color="green")
 			end
-			if equal == 0
+			if equal == 0 #this will equalize the axes by default. Otherwise, it'll just plot only what it needs too
 				plt.axis("equal")
 			end
 		else
