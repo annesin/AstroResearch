@@ -94,30 +94,23 @@ function SystemRK(file)
               r = sqrt((x₁-x₂)^2+(y₁-y₂)^2) #distance between two bodies
               v = sqrt(G*(m₁+m₂)*(abs((2/r)-(1/a)))) #velocity of reduced mass, needed because if r is about 2a, then because of numerical error, the system may crash because of an imaginary result
 
-              if dev < abs(E-E0) #checks for acceptable conservation
-                     h = ℯ^(-1+log(h))
-              elseif .1*dev > abs(E-E0) && counter < 3 #speeds up if conserving too much
-                     h = ℯ^(1+log(h))
-                     counter += 1
-              else
-                     x₁0, y₁0, v₁0, w₁0, x₂0, y₂0, v₂0, w₂0 = x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂ #note here that 0 values are the "offical" values, the one that we accept after we run this check 
-                     t0 += h
-                     if h > hMax
-                            hMax = h
-                     elseif h < hMin
-                            hMin = h
-                     end
-                     E0 = E
-                     L0 = L
-                     counter = 0
-                     push!(lList,h)
-                     push!(Llist,L) #we only add the z component to the list, since by right hand rule, the rotational momentum will always be in the z-direction
-                     push!(Elist,E)
-                     push!(Tlist,t0)
-                     push!(X1,x₁0)
-                     push!(X2,x₂0)
-                     push!(Y1,y₁0) #move L ane E calculation up here
-                     push!(Y2,y₂0)
+              t0 += h
+
+              h = hParam*(r/v)
+              if h > hMax
+                     hMax = h
+              elseif h < hMin
+                     hMin = h
+              end
+
+              push!(lList,h)
+              push!(Llist,L) #we only add the z component to the list, since by right hand rule, the rotational momentum will always be in the z-direction
+              push!(Elist,E)
+              push!(Tlist,t0)
+              push!(X1,x₁)
+              push!(X2,x₂)
+              push!(Y1,y₁) 
+              push!(Y2,y₂)
               end
               #println([t0])
        end
