@@ -1,4 +1,5 @@
 import LinearAlgebra.cross
+Base.show(io::IO, x::Union{Float64,Float32}) = Base.Grisu._show(io, x, Base.Grisu.SHORTEST, 0, true, false) #allows julia to write to file precisely
 #= Uncomment this to install matplotlib =#
 using Pkg
 Pkg.add("PyPlot")
@@ -189,22 +190,23 @@ end
 
 function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
        x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2, a, e, m₁, m₂, hParam = SystemRK(file)
+       #println(lList,X1,X2,Y1,Y2 )
        if color == "L"
               L0 = Llist[1]
-              Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              plt.plot(Tlist,Llist) 
+              Llist0 = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+              plt.plot(Tlist,Llist0) 
        elseif color == "E"
               E0 = Elist[1]
-              Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-              plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
+              Elist0 = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+              plt.plot(Tlist,Elist0) #find out what the scale things are, actually change to deltaE/E0
        elseif color == "EL"
               L0 = Llist[1]
-              Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              plt.plot(Tlist,Llist,linestyle="solid",color="green") 
+              Llist0 = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+              plt.plot(Tlist,Llist0,linestyle="solid",color="green") 
               E0 = Elist[1]
-              Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-              plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
-              println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+              Elist0 = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+              plt.plot(Tlist,Elist0,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+              println("The angular momentum varied by $(minimum(Llist0)) to $(maximum(Llist0)) while the energy varied by $(minimum(Elist0)) to $(maximum(Elist0)).")
        elseif color == "time"
               plt.plot(lList,linestyle="solid",color="green")
        else
@@ -213,13 +215,25 @@ function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, t
               plt.axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
               E0 = Elist[1]
               L0 = Llist[1]
-              Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
-              Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+              Elist0 = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
+              Llist0 = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+              println("The angular momentum varied by $(minimum(Llist0)) to $(maximum(Llist0)) while the energy varied by $(minimum(Elist0)) to $(maximum(Elist0)).")
        end
        if fileSave != 0 #so if we changed it from the default
+              #=boy this was irritating=#
+              bigArray = [Llist,Elist,Tlist,lList,X1,X2,Y1,Y2] #stores the arrays we want to write into a 2-dimensional array
+              tracker = [] #this will store a data point for each 1D array
+              for i in 1:8
+                     if occursin("Any","$(bigArray[i])") #we loop through each stringed version of the array to see if "Any[" is at the beginning of any of them
+                            push!(tracker,5) #if there is, we store a 5
+                     else
+                            push!(tracker,2) #if there isn't, we store a 2
+                     end
+              end
               open("h≈(r÷v) data files/$m₁,$m₂,$a,$e,$t,$hParam.txt","w") do f
-                     write(f, "$Llist\n","$Elist\n","Tlist\n","lList")
+                     for i in 1:8
+                            write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+                     end
               end
        end
 end
