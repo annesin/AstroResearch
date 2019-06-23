@@ -72,16 +72,14 @@ function System(file)
 
 	L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 
-	t0 = 0
+	t0 = 0.0
 
 	Llist = [L] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
 	Elist = [E] #same, but for energy
 	Tlist = [t0] #keeps track of time independent of timestep
 
-	h = hParam*(maximum(norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃))) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-	hMax = h
-	hMin = h #these find the minima and maxima of the timestep interval
-
+	h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+	
 	lList = [h] #testing length of timestep
 
 	#until the desired time has been reached, the code runs RK4
@@ -110,6 +108,9 @@ function System(file)
 		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 
 		t0 = t0 + h #advances time
+
+		h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+
 		push!(Elist,E)
 		push!(Llist,L)
 	    push!(lList,h)
@@ -130,9 +131,9 @@ function System(file)
 		end
 	end
 	if numBodies == 3
-		X4, Y4, Z4 = [[],[],[]] #so, if we only have three bodies, we just return empty arrays for these to make julia happy
+		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,[],[],[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
 	end
-	return x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies
+	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -167,13 +168,13 @@ function RK4(f,x,m,h)
 
 end 
 
-function Plot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-	x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies = System(file)
-	#= these will be implemented once we figure out how to calculate E and L=#
+function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z = System(file)
 	L0 = Llist[1]
 	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
 	E0 = Elist[1]
 	Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
 	println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
 	if color == "L"
 		   plt.plot(Tlist,Llist) 
@@ -190,7 +191,7 @@ function Plot(file, color, equal=0) #plotting L, E, or positions over time, type
 			plt.plot(X2,Y2,linestyle="solid",color=color)
 			plt.plot(X3,Y3,linestyle="solid",color="green")
 			if numBodies == 4
-				plt.plot(X4,Y4,linestype="solid",color="green")
+				plt.plot(X4,Y4,linestyle="solid",color="orange")
 			end
 			if equal == 0 #this will equalize the axes by default. Otherwise, it'll just plot only what it needs too
 				plt.axis("equal")
@@ -200,7 +201,7 @@ function Plot(file, color, equal=0) #plotting L, E, or positions over time, type
 			plot3D(X2,Y2,Z2,linestyle="solid",color=color)
 			plot3D(X3,Y3,Z3,linestyle="solid",color="green")
 			if numBodies == 4
-				plot3D(X4,Y4,linestype="solid",color="green")
+				plot3D(X4,Y4,linestyle="solid",color="orange")
 			end
 			if equal == 0
 				maxPoint = maximum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
@@ -213,6 +214,35 @@ function Plot(file, color, equal=0) #plotting L, E, or positions over time, type
 				scatter3D(maxPoint,minPoint,maxPoint,alpha=0)
 				scatter3D(maxPoint,maxPoint,minPoint,alpha=0)
 				scatter3D(maxPoint,maxPoint,maxPoint,alpha=0) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
+			end
+		end
+	end
+	if fileSave != 0
+		bigArray = [Llist,Elist,Tlist,lList,X1,X2,X3,Y1,Y2,Y3,Z1,Z2,Z3] #stores the arrays we want to write into a 2-dimensional array
+		if numBodies == 4
+			push!(bigArray,X4,Y4,Z4)
+		end
+		tracker = [] #this will store a data point for each 1D array
+		for i in 1:length(bigArray)
+			if occursin("Any","$(bigArray[i])") #we loop through each stringed version of the array to see if "Any[" is at the beginning of any of them
+				push!(tracker,5) #if there is, we store a 5
+			else
+				push!(tracker,2) #if there isn't, we store a 2
+			end
+		end
+		if numBodies == 3
+			open("h≈(r÷v) data files/$(m[1]), $(m[2]), $(m[3]), $(X1[1]), $(Y1[1]), $(Z1[1]), $v1x, $v1y, $v1z, $(X2[1]), $(Y2[1]), $(Z2[1]), $v2x, $v2y, $v2z, $(X3[1]), $(Y3[1]), $(Z3[1]), $v3x, $v3y, $v3z, $hParam.txt","w") do f
+				for i in 1:length(bigArray)
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+				end
+				write(f,"3")
+			end
+		else
+			open("h≈(r÷v) data files/$(m[1]), $(m[2]), $(m[3]), $(X1[1]), $(Y1[1]), $(Z1[1]), $v1x, $v1y, $v1z, $(X2[1]), $(Y2[1]), $(Z2[1]), $v2x, $v2y, $v2z, $(X3[1]), $(Y3[1]), $(Z3[1]), $v3x, $v3y, $v3z, $(X4[1]), $(Y4[1]), $(Z4[1]), $v4x, $v4y, $v4z, $hParam.txt","w") do f
+				for i in 1:length(bigArray)
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+				end
+				write(f,"4")
 			end
 		end
 	end

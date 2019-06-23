@@ -12,6 +12,7 @@ function ExternalPlot(file, color) #plotting L, E, or positions over time, type 
     X2 = parse.(Float64,split(readlines(file)[6],",")) 
     Y1 = parse.(Float64,split(readlines(file)[7],",")) 
     Y2 = parse.(Float64,split(readlines(file)[8],",")) 
+    numBodies = parse.(Int64,readlines(file)[9])
     if color == "L"
            L0 = Llist[1]
            Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L

@@ -230,10 +230,11 @@ function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, t
                             push!(tracker,2) #if there isn't, we store a 2
                      end
               end
-              open("h≈(r÷v) data files/$m₁,$m₂,$a,$e,$t,$hParam.txt","w") do f
+              open("h≈(r÷v) data files/$m₁, $m₂, $a, $e, $t, $hParam.txt","w") do f
                      for i in 1:8
                             write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
                      end
+                            write(f, "2")
               end
        end
 end
