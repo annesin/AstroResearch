@@ -1,3 +1,5 @@
+import LinearAlgebra.cross
+import LinearAlgebra.norm
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot
@@ -28,17 +30,14 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. !!this should be implemented
 	end
 	t = parse.(Float64,split(readlines(file)[3],","))[1]
-	dev = parse.(Float64,split(readlines(file)[3],","))[2] #these should be the elements of the third line of the .txt file
-	return fArray, XArray, mArray, t, dev, numBodies
+	hParam = parse.(Float64,split(readlines(file)[3],","))[2] #these should be the elements of the third line of the .txt file
+	return fArray, XArray, mArray, t, hParam, numBodies
 end
 
 function System(file)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
-	f, x, m, t, dev, numBodies = fileInput(file) #gets info from file
+	f, x, m, t, hParam, numBodies = fileInput(file) #gets info from file
 
-	Llist = [] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
-	Elist = [] #same, but for energy
-	Tlist = [] #keeps track of time independent of timestep
 	X1 = [x[1]] #keeps track of the first body's x coordinate
 	X2 = [x[7]] #similar for these
 	X3 = [x[13]]
@@ -54,15 +53,34 @@ function System(file)
 		Z4 = [x[21]]
 	end
 
-	h = 0.0001 #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-	hMax = h
-	hMin = h #these find the minima and maxima of the timestep interval
+	R₁ = [x[1],x[2],x[3]]
+	R₂ = [x[7],x[8],x[9]]
+	R₃ = [x[13],x[14],x[15]]
+	R₁₂ = R₁-R₂
+	R₁₃ = R₁-R₃
+	R₂₃ = R₂-R₃
+	V₁ = [x[4],x[5],x[6]]
+	V₂ = [x[10],x[11],x[12]]
+	V₃ = [x[16],x[17],x[18]]
+	V₁₂ = V₁-V₂
+	V₁₃ = V₁-V₃
+	V₂₃ = V₂-V₃
 
+	K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
+	U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
+	E = K - U #total energy
+
+	L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
+
+	t0 = 0.0
+
+	Llist = [L] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
+	Elist = [E] #same, but for energy
+	Tlist = [t0] #keeps track of time independent of timestep
+
+	h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+	
 	lList = [h] #testing length of timestep
-
-	counter = 0 #this counter is in order to break the h calculation in case it gets stuck
-
-	t0 = 0
 
 	#until the desired time has been reached, the code runs RK4
 
@@ -70,13 +88,31 @@ function System(file)
 		#we will add an adaptive timestep later
 		x = RK4(f, x, m, h)
 
-		V₁ = x[4]^2+x[5]^2+x[6]^2 #velocities of the massive bodies
-		V₂ = x[10]^2+x[11]^2+x[12]^2
-		V₃ = x[16]^2+x[17]^2+x[18]^2
+		R₁ = [x[1],x[2],x[3]]
+		R₂ = [x[7],x[8],x[9]]
+		R₃ = [x[13],x[14],x[15]]
+		R₁₂ = R₁-R₂
+		R₁₃ = R₁-R₃
+		R₂₃ = R₂-R₃
+		V₁ = [x[4],x[5],x[6]]
+		V₂ = [x[10],x[11],x[12]]
+		V₃ = [x[16],x[17],x[18]]
+		V₁₂ = V₁-V₂
+		V₁₃ = V₁-V₃
+		V₂₃ = V₂-V₃
 
-		
+		K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
+		U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
+		E = K - U #total energy
+
+		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 
 		t0 = t0 + h #advances time
+
+		h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+
+		push!(Elist,E)
+		push!(Llist,L)
 	    push!(lList,h)
 		push!(Tlist,t0)
 		push!(X1,x[1])
@@ -95,9 +131,11 @@ function System(file)
 		end
 	end
 	if numBodies == 3
-		X4, Y4, Z4 = [[],[],[]] #so, if we only have three bodies, we just return empty arrays for these to make julia happy
+		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,[],[],[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
+	else 
+		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
-	return x, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies
+	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -132,34 +170,30 @@ function RK4(f,x,m,h)
 
 end 
 
-function Plot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-	x, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies = System(file)
-	#= these will be implemented once we figure out how to calculate E and L=#
-	#=if color == "L"
-		   L0 = Llist[1]
-		   Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z = System(file)
+	L0 = Llist[1]
+	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
+	E0 = Elist[1]
+	Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
+	println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+	if color == "L"
 		   plt.plot(Tlist,Llist) 
 	elseif color == "E"
-		   E0 = Elist[1]
-		   Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
 		   plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
 	elseif color == "EL"
-		   L0 = Llist[1]
-		   Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-		   plt.plot(#=Tlist,=#Llist,linestyle="solid",color="green") 
-		   E0 = Elist[1]
-		   Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-		   plt.plot(#=Tlist,=#Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
-		   println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+		   plt.plot(Tlist,Llist,linestyle="solid",color="green") 
+		   plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
 	elseif color == "time"
 		   plt.plot(lList,linestyle="solid",color="green")
-	else=#
+	else
 		if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
 			plt.plot(X1,Y1,linestyle="solid",color="red")
 			plt.plot(X2,Y2,linestyle="solid",color=color)
 			plt.plot(X3,Y3,linestyle="solid",color="green")
 			if numBodies == 4
-				plt.plot(X4,Y4,linestype="solid",color="green")
+				plt.plot(X4,Y4,linestyle="solid",color="orange")
 			end
 			if equal == 0 #this will equalize the axes by default. Otherwise, it'll just plot only what it needs too
 				plt.axis("equal")
@@ -169,7 +203,7 @@ function Plot(file, color, equal=0) #plotting L, E, or positions over time, type
 			plot3D(X2,Y2,Z2,linestyle="solid",color=color)
 			plot3D(X3,Y3,Z3,linestyle="solid",color="green")
 			if numBodies == 4
-				plot3D(X4,Y4,linestype="solid",color="green")
+				plot3D(X4,Y4,Z4,linestyle="solid",color="orange")
 			end
 			if equal == 0
 				maxPoint = maximum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
@@ -184,14 +218,37 @@ function Plot(file, color, equal=0) #plotting L, E, or positions over time, type
 				scatter3D(maxPoint,maxPoint,maxPoint,alpha=0) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
 			end
 		end
-			
-
-		#=E0 = Elist[1]
-		L0 = Llist[1]
-		Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
-		Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-		println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")=#
-	#end
+	end
+	if fileSave != 0
+		bigArray = [Llist,Elist,Tlist,lList,X1,X2,Y1,Y2,Z1,Z2,X3,Y3,Z3] #stores the arrays we want to write into a 2-dimensional array
+		if numBodies == 4
+			push!(bigArray,X4,Y4,Z4)
+		end
+		tracker = [] #this will store a data point for each 1D array
+		for i in 1:length(bigArray)
+			if occursin("Any","$(bigArray[i])") #we loop through each stringed version of the array to see if "Any[" is at the beginning of any of them
+				push!(tracker,5) #if there is, we store a 5
+			else
+				push!(tracker,2) #if there isn't, we store a 2
+			end
+		end
+		if numBodies == 3
+			open("h≈(r÷v) data files/$(m[1]), $(m[2]), $(m[3]), $(X1[1]), $(Y1[1]), $(Z1[1]), $v1x, $v1y, $v1z, $(X2[1]), $(Y2[1]), $(Z2[1]), $v2x, $v2y, $v2z, $(X3[1]), $(Y3[1]), $(Z3[1]), $v3x, $v3y, $v3z, $hParam.txt","w") do f
+				write(f,"3","\n")
+				for i in 1:length(bigArray)
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+				end
+			end
+		else
+			open("h≈(r÷v) data files/$(round(m[1];digits=5)), $(round(m[2];digits=5)), $(round(m[3];digits=5)), $(round(X1[1];digits=5)), $(round(Y1[1];digits=5)), $(round(Z1[1];digits=5)), $(round(v1x;digits=5)), $(round(v1y;digits=5)) $(round(v1z;digits=5)), $(round(X2[1];digits=5)), $(round(Y2[1];digits=5)), $(round(Z2[1];digits=5)), $(round(v2x;digits=5)), $(round(v2y;digits=5)), $(round(v2z;digits=5)), $(round(X3[1];digits=5)), $(round(Y3[1];digits=5)), $(round(Z3[1];digits=5)), $(round(v3x;digits=5)), $(round(v3y;digits=5)), $(round(v3z;digits=5)), $(round(X4[1];digits=5)), $(round(Y4[1];digits=5)), $(round(Z4[1];digits=5)), $(round(v4x;digits=1)), $(round(v4y;digits=5)), $(round(v4z;digits=5)), $hParam.txt","w") do f #UGH I had to do this because otherwise the file name would've been too long (ノಠ益ಠ)ノ彡┻━┻
+				write(f,"4","\n")
+				for i in 1:length(bigArray)
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+				end
+				write(f,"4")
+			end
+		end
+	end
 end
 
 function f0(x::Array{Float64,1}) #DE for Masses
