@@ -52,8 +52,6 @@ function SystemRK(file)
        r = sqrt((x₁-x₂)^2+(y₁-y₂)^2) #distance between two bodies
        v = sqrt(G*(m₁+m₂)*((2/r)-(1/a))) #velocity of reduced mass
        h = hParam*(r/v) #this calculates the initial timestep
-       hMax = h
-       hMin = h #these find the minima and maxima of the timestep interval
 
        lList = [h] #testing length of timestep
 
@@ -96,11 +94,6 @@ function SystemRK(file)
               t0 += h
 
               h = hParam*(r/v)
-              if h > hMax
-                     hMax = h
-              elseif h < hMin
-                     hMin = h
-              end
 
               push!(lList,h)
               push!(Llist,L) #we only add the z component to the list, since by right hand rule, the rotational momentum will always be in the z-direction
@@ -113,7 +106,6 @@ function SystemRK(file)
        end
               
        println("$t0 days later...")
-       println("The timestep varied by $hMin to $hMax.")
        return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2, a, e, m₁, m₂, hParam #returns the desired values
 end
 
@@ -191,33 +183,25 @@ end
 function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
        x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2, a, e, m₁, m₂, hParam = SystemRK(file)
        #println(lList,X1,X2,Y1,Y2 )
+       L0 = Llist[1]
+       E0 = Elist[1]
+       Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+       Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+       println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
+       println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
        if color == "L"
-              L0 = Llist[1]
-              Llist0 = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              plt.plot(Tlist,Llist0) 
+              plt.plot(Tlist,Llist) 
        elseif color == "E"
-              E0 = Elist[1]
-              Elist0 = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-              plt.plot(Tlist,Elist0) #find out what the scale things are, actually change to deltaE/E0
+              plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
        elseif color == "EL"
-              L0 = Llist[1]
-              Llist0 = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              plt.plot(Tlist,Llist0,linestyle="solid",color="green") 
-              E0 = Elist[1]
-              Elist0 = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-              plt.plot(Tlist,Elist0,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
-              println("The angular momentum varied by $(minimum(Llist0)) to $(maximum(Llist0)) while the energy varied by $(minimum(Elist0)) to $(maximum(Elist0)).")
+              plt.plot(Tlist,Llist,linestyle="solid",color="green") 
+              plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
        elseif color == "time"
               plt.plot(lList,linestyle="solid",color="green")
        else
               plt.plot(X1,Y1,linestyle="solid",color="red")
               plt.plot(X2,Y2,linestyle="solid",color=color)
               plt.axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
-              E0 = Elist[1]
-              L0 = Llist[1]
-              Elist0 = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E'
-              Llist0 = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-              println("The angular momentum varied by $(minimum(Llist0)) to $(maximum(Llist0)) while the energy varied by $(minimum(Elist0)) to $(maximum(Elist0)).")
        end
        if fileSave != 0 #so if we changed it from the default
               #=boy this was irritating=#
@@ -230,7 +214,8 @@ function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, t
                             push!(tracker,2) #if there isn't, we store a 2
                      end
               end
-              open("h≈(r÷v) data files/$m₁,$m₂,$a,$e,$t,$hParam.txt","w") do f
+              open("h≈(r÷v) data files/$m₁, $m₂, $a, $e, $t, $hParam.txt","w") do f
+                     write(f,"2","\n")
                      for i in 1:8
                             write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
                      end
