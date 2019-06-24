@@ -132,6 +132,8 @@ function System(file)
 	end
 	if numBodies == 3
 		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,[],[],[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
+	else 
+		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
 	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
 end
@@ -201,7 +203,7 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 			plot3D(X2,Y2,Z2,linestyle="solid",color=color)
 			plot3D(X3,Y3,Z3,linestyle="solid",color="green")
 			if numBodies == 4
-				plot3D(X4,Y4,linestyle="solid",color="orange")
+				plot3D(X4,Y4,Z4,linestyle="solid",color="orange")
 			end
 			if equal == 0
 				maxPoint = maximum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
@@ -218,7 +220,7 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 		end
 	end
 	if fileSave != 0
-		bigArray = [Llist,Elist,Tlist,lList,X1,X2,X3,Y1,Y2,Y3,Z1,Z2,Z3] #stores the arrays we want to write into a 2-dimensional array
+		bigArray = [Llist,Elist,Tlist,lList,X1,X2,Y1,Y2,Z1,Z2,X3,Y3,Z3] #stores the arrays we want to write into a 2-dimensional array
 		if numBodies == 4
 			push!(bigArray,X4,Y4,Z4)
 		end
@@ -232,13 +234,14 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 		end
 		if numBodies == 3
 			open("h≈(r÷v) data files/$(m[1]), $(m[2]), $(m[3]), $(X1[1]), $(Y1[1]), $(Z1[1]), $v1x, $v1y, $v1z, $(X2[1]), $(Y2[1]), $(Z2[1]), $v2x, $v2y, $v2z, $(X3[1]), $(Y3[1]), $(Z3[1]), $v3x, $v3y, $v3z, $hParam.txt","w") do f
+				write(f,"3","\n")
 				for i in 1:length(bigArray)
 					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
 				end
-				write(f,"3")
 			end
 		else
-			open("h≈(r÷v) data files/$(m[1]), $(m[2]), $(m[3]), $(X1[1]), $(Y1[1]), $(Z1[1]), $v1x, $v1y, $v1z, $(X2[1]), $(Y2[1]), $(Z2[1]), $v2x, $v2y, $v2z, $(X3[1]), $(Y3[1]), $(Z3[1]), $v3x, $v3y, $v3z, $(X4[1]), $(Y4[1]), $(Z4[1]), $v4x, $v4y, $v4z, $hParam.txt","w") do f
+			open("h≈(r÷v) data files/$(round(m[1];digits=5)), $(round(m[2];digits=5)), $(round(m[3];digits=5)), $(round(X1[1];digits=5)), $(round(Y1[1];digits=5)), $(round(Z1[1];digits=5)), $(round(v1x;digits=5)), $(round(v1y;digits=5)) $(round(v1z;digits=5)), $(round(X2[1];digits=5)), $(round(Y2[1];digits=5)), $(round(Z2[1];digits=5)), $(round(v2x;digits=5)), $(round(v2y;digits=5)), $(round(v2z;digits=5)), $(round(X3[1];digits=5)), $(round(Y3[1];digits=5)), $(round(Z3[1];digits=5)), $(round(v3x;digits=5)), $(round(v3y;digits=5)), $(round(v3z;digits=5)), $(round(X4[1];digits=5)), $(round(Y4[1];digits=5)), $(round(Z4[1];digits=5)), $(round(v4x;digits=1)), $(round(v4y;digits=5)), $(round(v4z;digits=5)), $hParam.txt","w") do f #UGH I had to do this because otherwise the file name would've been too long (ノಠ益ಠ)ノ彡┻━┻
+				write(f,"4","\n")
 				for i in 1:length(bigArray)
 					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
 				end
