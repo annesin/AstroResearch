@@ -106,6 +106,12 @@ function SystemRK(file)
        end
               
        println("$t0 days later...")
+       L0 = Llist[1]
+       E0 = Elist[1]
+       Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
+       Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+       println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
+       println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
        return x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2, a, e, m₁, m₂, hParam #returns the desired values
 end
 
@@ -182,13 +188,6 @@ end
 
 function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
        x₁, y₁, v₁, w₁, x₂, y₂, v₂, w₂, t, Llist, Elist, Tlist, lList, X1, X2, Y1, Y2, a, e, m₁, m₂, hParam = SystemRK(file)
-       #println(lList,X1,X2,Y1,Y2 )
-       L0 = Llist[1]
-       E0 = Elist[1]
-       Llist = map(x -> (x-L0)/L0,Llist) #plotting ΔL, not L
-       Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-       println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
-       println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
        if color == "L"
               plt.plot(Tlist,Llist) 
        elseif color == "E"

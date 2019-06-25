@@ -3,7 +3,7 @@ import LinearAlgebra.norm
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot
-
+#look at how julia runs with multiple cores
 G = 2945.49 #gravitational constant
 
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
@@ -78,8 +78,8 @@ function System(file)
 	Elist = [E] #same, but for energy
 	Tlist = [t0] #keeps track of time independent of timestep
 
-	h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-	
+	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+
 	lList = [h] #testing length of timestep
 
 	#until the desired time has been reached, the code runs RK4
@@ -169,7 +169,7 @@ function RK4(f,x,m,h)
 	return  x+(k1+2*k2+2*k3+k4)/6
 
 end 
-
+#!!change to filename, inclination
 function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z = System(file)
 	L0 = Llist[1]
