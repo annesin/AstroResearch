@@ -1,12 +1,20 @@
+import LinearAlgebra.cross
+import LinearAlgebra.norm
+using Pkg
+Pkg.add("PyPlot")
+using PyPlot
 
-function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
+G = 2945.49 #gravitational constant
+
+
+function fileInput(file) #change initial conditions to m1, m2, m3, A1, e1, A2, e2  
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
 	fArray = [] #we need differential functions to calculate new positions and velocities with each timestep. These functions will be stored in this array. What functions are entered depends on how many bodies we are working with.
 
 	mArray = parse.(Float64,split(readlines(file)[1],",")) #this inputs the masses of the bodies
-	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial positions and velocities of the bodies
+	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial separations and eccentricities of the bodies
 
-	numBodies = length(XArray)/6 #this is different than the number of masses, because the test particle counts as a massless body here
+	numBodies = length(mArray) #this is different than the number of masses, so input a test particle with m=0
 
 	if numBodies == 3 #so, here, we either have three massive bodies or two massive bodies with a test particle
 		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C) #these are the functions we need for that
@@ -27,7 +35,7 @@ function System(file)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, numBodies = fileInput(file) #gets info from file
 
-	#Masses
+	#Masses: NOTE:FOR NOW WE ARE ASSUMING M1 IS ABOUT AS MASSIVE AS M2
 	M1 = m[1]
 	M2 = m[2]
 	M3 = m[3]
@@ -40,7 +48,7 @@ function System(file)
 	e2 = x[4] #eccentricity of orbit 2
 	X1 = [(-A2*M3)/M - A1/2]
 	X2 = [((-A2*M3)/M) + A1/2]#initial position of center mass
-	X3 = [(A2*M)/M] #initial position of rightmost mass
+	X3 = [(A2*(M1 + M2))/M] #initial position of rightmost mass
 	Y1 = [0.0]
 	Y2 = [0.0]
 	Y3 = [0.0]
@@ -54,18 +62,20 @@ function System(file)
 	end
 
 	#separations
-	R₁ = [X1, Y1, Z1] #Distance of body 1 from origin
-	R₂ = [X2, Y2, Z2] #similar
-	R₃ = [X3, Y3, Z3]
-	R₁₂ = A1 #distance from body 1 to 2
-	R₁₃ = A2 + A1/2
-	R₂₃ = A2 - A1/2
+	R₁ = [X1[1], 0.0, 0.0] #Distance of body 1 from origin
+	R₂ = [X2[1], 0.0, 0.0] #similar
+	R₃ = [X3[1], 0.0, 0.0]
+	R₁₂ = R₁-R₂ #Distance from body 1 to 2
+	R₁₃ = R₁-R₃
+	R₂₃ = R₂-R₃
 	V₁ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) + sqrt(G*M/A2)),0.0]
 	V₂ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) - sqrt(G*M/A2)),0.0]
 	V₃ = [0.0, sqrt(G*M/A2),0.0]
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
+	p =[]
+	push!(p, R₁[1], R₁[2], R₁[3], V₁[1], V₁[2], V₁[3], R₂[1], R₂[2], R₂[3], V₂[1], V₂[2], V₂[3], R₃[1], R₃[2], R₃[3], V₃[1], V₃[2], V₃[3])
 
 	K = .5*M1*norm(V₁)^2+.5*M2*norm(V₂)^2+.5*M3*norm(V₃)^2 #overall kinetic energy
 	U = G*M1*M2/norm(R₁₂)+G*M1*M3/norm(R₁₃)+G*M2*M3/norm(R₂₃) #total gravitational potential energy
@@ -82,10 +92,14 @@ function System(file)
 	t0 = 0.0
 
 	Llist = [L] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
+	L₁list = [L₁]
+	L₂list = [L₂]
 	Elist = [E] #same, but for energy
+	E₁list = [E₁]
+	E₂list = [E₂]
 	Tlist = [t0] #keeps track of time independent of timestep
 
-	h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+	h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #=this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented=#
 	
 	lList = [h] #testing length of timestep
 
@@ -93,17 +107,17 @@ function System(file)
 
 	while t0 < t
 		#we will add an adaptive timestep later
-		x = RK4(f, x, m, h)
+		p = RK4(f, p, m, h)
 
-		R₁ = [x[1],x[2],x[3]]
-		R₂ = [x[7],x[8],x[9]]
-		R₃ = [x[13],x[14],x[15]]
+		R₁ = [p[1], p[2], p[3]] #Distance of body 1 from origin
+		R₂ = [p[7], p[8], p[9]] #similar
+		R₃ = [p[13], p[14], p[15]]
 		R₁₂ = R₁-R₂
 		R₁₃ = R₁-R₃
 		R₂₃ = R₂-R₃
-		V₁ = [x[4],x[5],x[6]]
-		V₂ = [x[10],x[11],x[12]]
-		V₃ = [x[16],x[17],x[18]]
+		V₁ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) + sqrt(G*M/A2)),0.0]
+		V₂ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) - sqrt(G*M/A2)),0.0]
+		V₃ = [0.0, sqrt(G*M/A2),0.0]
 		V₁₂ = V₁-V₂
 		V₁₃ = V₁-V₃
 		V₂₃ = V₂-V₃
@@ -111,26 +125,35 @@ function System(file)
 		K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
 		U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
 		E = K - U #total energy
+		E₁ = .5*M1*norm(V₁)^2+.5*M2*norm(V₂)^2 - G*M1*M2/norm(R₁₂) #Energy of the Inner Binary
+		E₂ = .5*(M1+M2)*(G*(M1+M2)/A2) + .5*M3*norm(V₃)^2 - G*(M1+M2)*M3/norm(A2)#Energy of the Outer Binary
 
 		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
+
+		L₁ = cross(R₁,M1*V₁)+cross(R₂,M2*V₂) #Angular Momentum of the Inner binary
+		L₂ = cross((M3*A2/M),(M1+M2)*(-sqrt(G*(M1 +M2)/A2))) + cross(R₃,M3*V₃) #Momentum of the Outer Binary
 
 		t0 = t0 + h #advances time
 
 		h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 
 		push!(Elist,E)
+		push!(E₁list, E₁)
+		push!(E₂list, E₂)
 		push!(Llist,L)
-	    push!(lList,h)
+		push!(L₁list, L₁)
+		push!(L₂list, L₂)
+	    	push!(lList,h)
 		push!(Tlist,t0)
-		push!(X1,x[1])
-		push!(X2,x[7])
-		push!(X3,x[13])
-		push!(Y1,x[2]) 
-		push!(Y2,x[8])
-		push!(Y3,x[14])
-		push!(Z1,x[3])
-		push!(Z2,x[9])
-		push!(Z3,x[15])
+		push!(X1,p[1])
+		push!(X2,p[7])
+		push!(X3,p[13])
+		push!(Y1,p[2]) 
+		push!(Y2,p[8])
+		push!(Y3,p[14])
+		push!(Z1,p[3])
+		push!(Z2,p[9])
+		push!(Z3,p[15])
 		if numBodies == 4
 			push!(X4,x[19])
 			push!(Y4,x[20])
@@ -142,7 +165,7 @@ function System(file)
 	else 
 		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
-	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
+	return m, x, Elist, E₁list, E₂list, Llist, L₁list, L₂list, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
