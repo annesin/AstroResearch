@@ -39,38 +39,41 @@ function System(file)
 	M1 = m[1]
 	M2 = m[2]
 	M3 = m[3]
-	M = M1 + M2 +M3
+	M = M1 + M2 + M3
 
 	#Positions
 	A1 = x[1] #keeps track of the separation between bodies 1 and  2
 	A2 = x[3] #separations between the cm of bodies 1 and 2 and the mass 3
 	e1 = x[2] #eccentricity of orbit 1
 	e2 = x[4] #eccentricity of orbit 2
+	i = x[5] #inclination of third body orbit - angle between its orbital plane and the orbital plane of the inner binary
+	Θ = x[6] #offset angle - angle between the line formed by the x-axis and the x-y position of the third body. I think that this is the longitude of the ascending node-270 degrees, but I'm not sure.
 	X1 = [(-A2*M3)/M - A1/2]
 	X2 = [((-A2*M3)/M) + A1/2]#initial position of center mass
-	X3 = [(A2*(M1 + M2))/M] #initial position of rightmost mass
+	X3 = [cos(Θ)*A2*(1+e2)*(1-sin(i))] #initial position of rightmost mass
 	Y1 = [0.0]
 	Y2 = [0.0]
-	Y3 = [0.0]
+	Y3 = [sin(Θ)*A2*(1+e2)*(1-sin(i))]
 	Z1 = [0.0]
 	Z2 = [0.0]
-	Z3 = [0.0]
+	Z3 = [A2*(1+e2)*sin(i)]
 	if numBodies == 4
-		X4 = [x[19]]
-		Y4 = [x[20]]
-		Z4 = [x[21]]
+		X4 = [x[7]]
+		Y4 = [x[8]]
+		Z4 = [x[9]]
 	end
 
 	#separations
 	R₁ = [X1[1], 0.0, 0.0] #Distance of body 1 from origin
 	R₂ = [X2[1], 0.0, 0.0] #similar
-	R₃ = [X3[1], 0.0, 0.0]
+	R₃ = [X3[1], Y3[1], Z3[1]]
 	R₁₂ = R₁-R₂ #Distance from body 1 to 2
 	R₁₃ = R₁-R₃
 	R₂₃ = R₂-R₃
+	velocity = (G*M/A2)*((1-e2)/(1+e2))
 	V₁ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) + sqrt(G*M/A2)),0.0]
 	V₂ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) - sqrt(G*M/A2)),0.0]
-	V₃ = [0.0, sqrt(G*M/A2),0.0]
+	V₃ = [velocity*sin(Θ), velocity*cos(Θ),0.0]
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
@@ -143,7 +146,7 @@ function System(file)
 		push!(Llist,L)
 		push!(L₁list, L₁)
 		push!(L₂list, L₂)
-	    	push!(lList,h)
+		push!(lList,h)
 		push!(Tlist,t0)
 		push!(X1,p[1])
 		push!(X2,p[7])
@@ -155,15 +158,15 @@ function System(file)
 		push!(Z2,p[9])
 		push!(Z3,p[15])
 		if numBodies == 4
-			push!(X4,x[19])
-			push!(Y4,x[20])
-			push!(Z4,x[21])
+			push!(X4,p[19])
+			push!(Y4,p[20])
+			push!(Z4,p[21])
 		end
 	end
 	if numBodies == 3
 		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,[],[],[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
 	else 
-		v4x, v4y, v4z = [x[22],x[23],x[24]]
+		v4x, v4y, v4z = [p[22],p[23],p[24]]
 	end
 	return m, x, Elist, E₁list, E₂list, Llist, L₁list, L₂list, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
 end
