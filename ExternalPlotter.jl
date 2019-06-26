@@ -3,6 +3,17 @@ using Pkg
 Pkg.add("PyPlot")
 using PyPlot 
 
+"""
+Plots a previously calculated data set from a created .txt file from Plot() (either from systemrk.jl or Main.jl).
+
+ExternalPlot(file,color[, equal])
+
+file is the name of the file that you wish to plot. It will likely be found in the "h≈(r÷v) data files" folder.
+
+color is the color of the trajectory of one of the particles. It must be one of the colors recognized by matplotlib. Alternatively, if "E" is typed, then the energy will be plotted versus time. If "L" is typed, then angular momentum will be plotted versus time. If "EL" is typed, then both are plotted. "time" plots the timestep of the integration versus iteration.
+
+equal is optional. By default, the plot of the trajectories will have equal axes. To prevent this from happening, use an input other than 0 for equal.
+"""
 function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
        file = "h≈(r÷v) data files/$file"
        numBodies = parse.(Int64,readlines(file)[1])

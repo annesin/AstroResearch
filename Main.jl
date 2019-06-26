@@ -6,6 +6,7 @@ using PyPlot
 #!!look at how julia runs with multiple cores
 G = 2945.49 #gravitational constant
 
+"Inputs a file and retrieves the necessary information from the file. This includes the masses of the bodies and their initial conditions."
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
 	fArray = [] #we need differential functions to calculate new positions and velocities with each timestep. These functions will be stored in this array. What functions are entered depends on how many bodies we are working with.
@@ -34,6 +35,7 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 	return fArray, XArray, mArray, t, hParam, numBodies
 end
 
+"Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
 function System(file)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, numBodies = fileInput(file) #gets info from file
@@ -170,6 +172,19 @@ function RK4(f,x,m,h)
 
 end 
 #!!change to filename, inclination
+"""
+Takes a file with the data, then plots what you choose.
+
+Plot(file, object, [fileSave, equal])
+
+The input file must be a .txt file in the format described in README.md.
+
+The object is what is plotted. If "E" is typed, then the energy will be plotted versus time. If "L" is typed, then angular momentum will be plotted versus time. If "EL" is typed, then both are plotted. "time" plots the timestep of the integration versus iteration. Finally, a color accepted by matplotlib will plot the trajectories of the bodies, one of them having a path with the color specified.
+
+fileSave is optional. However, if a string is entered, for example, "Sample.txt", then a .txt file will be created that will store the system's data. This file can then be plotted using ExternalPlotter.jl without needing to recalculate the system again.
+
+equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
+"""
 function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z = System(file)
 	L0 = Llist[1]
