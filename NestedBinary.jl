@@ -48,8 +48,8 @@ function System(file)
 	e2 = x[4] #eccentricity of orbit 2
 	i = x[5] #inclination of third body orbit - angle between its orbital plane and the orbital plane of the inner binary
 	Θ = x[6] #offset angle - angle between the line formed by the x-axis and the x-y position of the third body. I think that this is the longitude of the ascending node-270 degrees, but I'm not sure.
-	X1 = [(-A2*M3)/M - A1/2]
-	X2 = [((-A2*M3)/M) + A1/2]#initial position of center mass
+	X1 = [(-A2*M3)/M - (A1*M2)/(M1+M2)]
+	X2 = [((-A2*M3)/M) + (M1*A1)/(M1 + M2)]#initial position of center mass
 	X3 = [cos(Θ)*A2*(1+e2)*(1-sin(i))] #initial position of rightmost mass
 	Y1 = [0.0]
 	Y2 = [0.0]
