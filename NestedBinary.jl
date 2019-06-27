@@ -240,6 +240,7 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 				plt.axis("equal")
 			end
 		else
+			ax = plt.axes(projection="3d")
 			plot3D(X1,Y1,Z1,linestyle="solid",color="red")
 			plot3D(X2,Y2,Z2,linestyle="solid",color=color)
 			plot3D(X3,Y3,Z3,linestyle="solid",color="green")
