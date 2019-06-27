@@ -74,8 +74,8 @@ function System(file)
 	R₁₂ = R₁-R₂
 	R₁₃ = R₁-R₃
 	R₂₃ = R₂-R₃
-	velocityM3 = sqrt(G*(M3^2)*(1-e2)/(A2*M))
-	velocityM1M2 = sqrt((G*(M1+M2)^2*(1-e2))/(A2*M)) #velocity of inner CM
+	velocityM3 = sqrt(G*(M1+M2)^2*(1-e2)/(A2*M))
+	velocityM1M2 = sqrt((G*(M3^2)*(1-e2))/(A2*M)) #velocity of inner CM
 	V₁ = [velocityM1M2*sin(Θ), -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cos(Θ),0.0]
 	V₂ = [-velocityM1M2*sin(Θ), sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cos(Θ),0.0]
 	V₃ = [velocityM3*sin(Θ), velocityM3*cos(Θ),0.0]
