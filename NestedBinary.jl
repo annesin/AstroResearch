@@ -67,31 +67,31 @@ function System(file)
 	R₁ = [X1[1], Y1[1], Z1[1]] #Distance of body 1 from origin
 	R₂ = [X2[1], Y2[1], Z2[1]] #similar
 	R₃ = [X3[1], Y3[1], Z3[1]]
+	CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
 	R₁₂ = R₁-R₂ #Distance from body 1 to 2
 	R₁₃ = R₁-R₃
 	R₂₃ = R₂-R₃
 	velocityM3 = sqrt(G*(M^2)*(1-e2)/(A2*(M3)))
-	velocityM1M2 = sqrt(G*(M^2)*(1-e2)/(A2*(M1+M2)))
+	velocityM1M2 = sqrt(G*(M^2)*(1-e2)/(A2*(M1+M2))) #velocity of inner CM
 	V₁ = [-velocityM1M2*sin(Θ), -sqrt(G*((M1+M2)^2)*(1-e1)/(A1*(M2)))-velocityM1M2*cos(Θ),0.0]
 	V₂ = [-velocityM1M2*sin(Θ), sqrt(G*((M1+M2)^2)*(1-e1)/(A1*(M1)))-velocityM1M2*cos(Θ),0.0]
 	V₃ = [velocityM3*sin(Θ), velocityM3*cos(Θ),0.0]
+	CMv₁₂ = [-velocityM1M2*sin(Θ), -velocityM1M2*cos(Θ),0]
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
-	p =[]
-	push!(p, R₁[1], R₁[2], R₁[3], V₁[1], V₁[2], V₁[3], R₂[1], R₂[2], R₂[3], V₂[1], V₂[2], V₂[3], R₃[1], R₃[2], R₃[3], V₃[1], V₃[2], V₃[3])
+	p = [R₁[1], R₁[2], R₁[3], V₁[1], V₁[2], V₁[3], R₂[1], R₂[2], R₂[3], V₂[1], V₂[2], V₂[3], R₃[1], R₃[2], R₃[3], V₃[1], V₃[2], V₃[3]]
 
 	K = .5*M1*norm(V₁)^2+.5*M2*norm(V₂)^2+.5*M3*norm(V₃)^2 #overall kinetic energy
 	U = G*M1*M2/norm(R₁₂)+G*M1*M3/norm(R₁₃)+G*M2*M3/norm(R₂₃) #total gravitational potential energy
 	E = K - U #total energy
 	E₁ = .5*M1*norm(V₁)^2+.5*M2*norm(V₂)^2 - G*M1*M2/norm(R₁₂) #Energy of the Inner Binary
-	E₂ = .5*(M1+M2)*(G*(M1+M2)/A2) + .5*M3*norm(V₃)^2 - G*(M1+M2)*M3/norm(A2)#Energy of the Outer Binary
+	E₂ = .5*(M1+M2)*(G*(M1+M2)/A2) + .5*M3*norm(V₃)^2 - G*(M1+M2)*M3/norm(A2) #Energy of the Outer Binary
 
 	L = cross(R₁,M1*V₁)+cross(R₂,M2*V₂)+cross(R₃,M3*V₃) #finds angular momentum of system
 
 	L₁ = cross(R₁,M1*V₁)+cross(R₂,M2*V₂) #Angular Momentum of the Inner binary
-	L₂ = cross((M3*A2/M),(M1+M2)*(-sqrt(G*(M1 +M2)/A2))) + cross(R₃,M3*V₃) #Momentum of the Outer Binary
-	
+	L₂ = cross(CM₁₂,(M1+M2)*CMv₁₂) + cross(R₃,M3*V₃) #Momentum of the Outer Binary
 
 	t0 = 0.0
 
@@ -116,12 +116,15 @@ function System(file)
 		R₁ = [p[1], p[2], p[3]] #Distance of body 1 from origin
 		R₂ = [p[7], p[8], p[9]] #similar
 		R₃ = [p[13], p[14], p[15]]
+		CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2) #updated inner center of mass
 		R₁₂ = R₁-R₂
 		R₁₃ = R₁-R₃
 		R₂₃ = R₂-R₃
-		V₁ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) + sqrt(G*M/A2)),0.0]
-		V₂ = [0.0, -1*(sqrt(G*(M1 + M2)/A1) - sqrt(G*M/A2)),0.0]
-		V₃ = [0.0, sqrt(G*M/A2),0.0]
+		V₁ = [p[4],p[5],p[6]]
+		V₂ = [p[10],p[11],p[12]]
+		V₃ = [p[16],p[17],p[18]]
+		CMv₁₂ = (M1*V₁+M2*V₂)/(M1+M2)
+		
 		V₁₂ = V₁-V₂
 		V₁₃ = V₁-V₃
 		V₂₃ = V₂-V₃
@@ -135,7 +138,7 @@ function System(file)
 		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 
 		L₁ = cross(R₁,M1*V₁)+cross(R₂,M2*V₂) #Angular Momentum of the Inner binary
-		L₂ = cross((M3*A2/M),(M1+M2)*(-sqrt(G*(M1 +M2)/A2))) + cross(R₃,M3*V₃) #Momentum of the Outer Binary
+		L₂ = cross(CM₁₂,(M1+M2)*CMv₁₂) + cross(R₃,M3*V₃) #Momentum of the Outer Binary
 
 		t0 = t0 + h #advances time
 
@@ -169,7 +172,7 @@ function System(file)
 	else 
 		v4x, v4y, v4z = [p[22],p[23],p[24]]
 	end
-	return m, x, Elist, E₁list, E₂list, Llist, L₁list, L₂list, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
+	return m, x, Elist, E₁list, E₂list, Llist, L₁list, L₂list, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam
 end
 
 function RK4(f,x,m,h)
