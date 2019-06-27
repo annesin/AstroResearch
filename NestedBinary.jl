@@ -72,8 +72,8 @@ function System(file)
 	R₁₃ = R₁-R₃
 	R₂₃ = R₂-R₃
 	velocityM3 = sqrt(G*(M^2)*(1-e2)/(A2*(M3)))
-	velocityM1M2 = sqrt(G*(M^2)*(1-e2)/(A2*(M1+M2))) #velocity of inner CM
-	V₁ = [-velocityM1M2*sin(Θ), -sqrt(G*((M1+M2)^2)*(1-e1)/(A1*(M2)))-velocityM1M2*cos(Θ),0.0]
+	velocityM1M2 = sqrt((G*(M^2)*(1-e2))/(A2*(M1+M2))) #velocity of inner CM
+	V₁ = [velocityM1M2*sin(Θ), -sqrt(G*((M1+M2)^2)*(1-e1)/(A1*(M2)))-velocityM1M2*cos(Θ),0.0]
 	V₂ = [-velocityM1M2*sin(Θ), sqrt(G*((M1+M2)^2)*(1-e1)/(A1*(M1)))-velocityM1M2*cos(Θ),0.0]
 	V₃ = [velocityM3*sin(Θ), velocityM3*cos(Θ),0.0]
 	CMv₁₂ = [-velocityM1M2*sin(Θ), -velocityM1M2*cos(Θ),0]
@@ -102,8 +102,8 @@ function System(file)
 	E₁list = [E₁]
 	E₂list = [E₂]
 	Tlist = [t0] #keeps track of time independent of timestep
-
-	h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #=this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented=#
+	println([R₁,R₂,R₃,V₁,V₂,V₃,CMv₁₂])
+	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #=this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented=#
 	
 	lList = [h] #testing length of timestep
 
@@ -142,7 +142,7 @@ function System(file)
 
 		t0 = t0 + h #advances time
 
-		h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 
 		push!(Elist,E)
 		push!(E₁list, E₁)
@@ -207,6 +207,89 @@ function RK4(f,x,m,h)
 
 end 
 
+function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam = System(file)
+	L0 = Llist[1]
+	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
+	E0 = Elist[1]
+	Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
+	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
+	println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+	if color == "L"
+		   plt.plot(Tlist,Llist) 
+	elseif color == "E"
+		   plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
+	elseif color == "EL"
+		   plt.plot(Tlist,Llist,linestyle="solid",color="green") 
+		   plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+	elseif color == "time"
+		   plt.plot(lList,linestyle="solid",color="green")
+	else
+		if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
+			plt.plot(X1,Y1,linestyle="solid",color="red")
+			plt.plot(X2,Y2,linestyle="solid",color=color)
+			plt.plot(X3,Y3,linestyle="solid",color="green")
+			if numBodies == 4
+				plt.plot(X4,Y4,linestyle="solid",color="orange")
+			end
+			if equal == 0 #this will equalize the axes by default. Otherwise, it'll just plot only what it needs too
+				plt.axis("equal")
+			end
+		else
+			plot3D(X1,Y1,Z1,linestyle="solid",color="red")
+			plot3D(X2,Y2,Z2,linestyle="solid",color=color)
+			plot3D(X3,Y3,Z3,linestyle="solid",color="green")
+			if numBodies == 4
+				plot3D(X4,Y4,Z4,linestyle="solid",color="orange")
+			end
+			if equal == 0
+				maxPoint = maximum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
+				minPoint = minimum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
+				scatter3D(minPoint,minPoint,minPoint,alpha=0)
+				scatter3D(minPoint,minPoint,maxPoint,alpha=0)
+				scatter3D(minPoint,maxPoint,minPoint,alpha=0)
+				scatter3D(minPoint,maxPoint,maxPoint,alpha=0)
+				scatter3D(maxPoint,minPoint,minPoint,alpha=0)
+				scatter3D(maxPoint,minPoint,maxPoint,alpha=0)
+				scatter3D(maxPoint,maxPoint,minPoint,alpha=0)
+				scatter3D(maxPoint,maxPoint,maxPoint,alpha=0) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
+			end
+		end
+	end
+	if fileSave != 0
+		bigArray = [Llist,Elist,Tlist,lList,X1,X2,Y1,Y2,Z1,Z2,X3,Y3,Z3] #stores the arrays we want to write into a 2-dimensional array
+		if numBodies == 4
+			push!(bigArray,X4,Y4,Z4)
+		end
+		tracker = [] #this will store a data point for each 1D array
+		for i in 1:length(bigArray)
+			if occursin("Any","$(bigArray[i])") #we loop through each stringed version of the array to see if "Any[" is at the beginning of any of them
+				push!(tracker,5) #if there is, we store a 5
+			else
+				push!(tracker,2) #if there isn't, we store a 2
+			end
+		end
+		if numBodies == 3
+			#=I'm saving these in case we need them later
+			open("h≈(r÷v) data files/$(m[1]), $(m[2]), $(m[3]), $(X1[1]), $(Y1[1]), $(Z1[1]), $v1x, $v1y, $v1z, $(X2[1]), $(Y2[1]), $(Z2[1]), $v2x, $v2y, $v2z, $(X3[1]), $(Y3[1]), $(Z3[1]), $v3x, $v3y, $v3z, $hParam.txt","w") do f =#
+			open("h≈(r÷v) data files/$fileSave","w") do f
+				write(f,"3","\n")
+				for i in 1:length(bigArray)
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+				end
+			end
+		else
+			#open("h≈(r÷v) data files/$(round(m[1];digits=5)), $(round(m[2];digits=5)), $(round(m[3];digits=5)), $(round(X1[1];digits=5)), $(round(Y1[1];digits=5)), $(round(Z1[1];digits=5)), $(round(v1x;digits=5)), $(round(v1y;digits=5)) $(round(v1z;digits=5)), $(round(X2[1];digits=5)), $(round(Y2[1];digits=5)), $(round(Z2[1];digits=5)), $(round(v2x;digits=5)), $(round(v2y;digits=5)), $(round(v2z;digits=5)), $(round(X3[1];digits=5)), $(round(Y3[1];digits=5)), $(round(Z3[1];digits=5)), $(round(v3x;digits=5)), $(round(v3y;digits=5)), $(round(v3z;digits=5)), $(round(X4[1];digits=5)), $(round(Y4[1];digits=5)), $(round(Z4[1];digits=5)), $(round(v4x;digits=1)), $(round(v4y;digits=5)), $(round(v4z;digits=5)), $hParam.txt","w") do f #UGH I had to do this because otherwise the file name would've been too long (ノಠ益ಠ)ノ彡┻━┻
+			open("h≈(r÷v) data files/$fileSave","w") do f
+				write(f,"4","\n")
+				for i in 1:length(bigArray)
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+				end
+				write(f,"4")
+			end
+		end
+	end
+end
 #Begin functions for the potentials
 
 function f0(x::Array{Float64,1}) #DE for Masses
