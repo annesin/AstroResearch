@@ -86,6 +86,10 @@ function System(file)
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
+	VCM = (M1*V₁+M2*V₂+M3*V₃)/M
+	V₁ -= VCM
+	V₂ -= VCM
+	V₃ -= VCM
 
 	K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
 	U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
