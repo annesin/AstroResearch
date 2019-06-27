@@ -52,15 +52,15 @@ function System(file)
 	i = x[5]
 	Θ = x[6]
 
-	X1 = [(-(A1*M2)/(M1+M2))-cos(Θ)*cos(i)*A2*(M3/M)] #keeps track of the first body's x coordinate
-	X2 = [((M1*A1)/(M1 + M2))-cos(Θ)*cos(i)*A2*(M3/M)] #similar for these
-	X3 = [cos(Θ)*A2*cos(i)*(M1+M2)/M]
-	Y1 = [-sin(Θ)*cos(i)*A2*(M3/M)]
-	Y2 = [-sin(Θ)*cos(i)*A2*(M3/M)]
-	Y3 = [sin(Θ)*A2*cos(i)*(M1+M2)/M]
-	Z1 = [-sin(i)*A2*(M3/M)]
-	Z2 = [-sin(i)*A2*(M3/M)]
-	Z3 = [A2*sin(i)*(M1+M2)/M]
+	X1 = [(-(A1*M2)/(M1+M2))-cosd(Θ)*cosd(i)*A2*(M3/M)] #keeps track of the first body's x coordinate
+	X2 = [((M1*A1)/(M1 + M2))-cosd(Θ)*cosd(i)*A2*(M3/M)] #similar for these
+	X3 = [cosd(Θ)*A2*cosd(i)*(M1+M2)/M]
+	Y1 = [-sind(Θ)*cosd(i)*A2*(M3/M)]
+	Y2 = [-sind(Θ)*cosd(i)*A2*(M3/M)]
+	Y3 = [sind(Θ)*A2*cosd(i)*(M1+M2)/M]
+	Z1 = [-sind(i)*A2*(M3/M)]
+	Z2 = [-sind(i)*A2*(M3/M)]
+	Z3 = [A2*sind(i)*(M1+M2)/M]
 	if numBodies == 4
 		X4 = [x[7]]
 		Y4 = [x[8]]
@@ -76,13 +76,13 @@ function System(file)
 	R₂₃ = R₂-R₃
 	velocityM3 = sqrt(G*(M1+M2)^2*(1-e2)/(A2*M))
 	velocityM1M2 = sqrt((G*(M3^2)*(1-e2))/(A2*M)) #velocity of inner CM
-	V₁ = [velocityM1M2*sin(Θ), -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cos(Θ),0.0]
-	V₂ = [-velocityM1M2*sin(Θ), sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cos(Θ),0.0]
-	V₃ = [velocityM3*sin(Θ), velocityM3*cos(Θ),0.0]
+	V₁ = [velocityM1M2*sind(Θ), -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ),0.0]
+	V₂ = [-velocityM1M2*sind(Θ), sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ),0.0]
+	V₃ = [velocityM3*sind(Θ), velocityM3*cosd(Θ),0.0]
 	if numBodies>3
 		V₄ = [x[7],x[8],x[9]]
 	end
-	CMv₁₂ = [-velocityM1M2*sin(Θ), -velocityM1M2*cos(Θ),0]
+	CMv₁₂ = [-velocityM1M2*sind(Θ), -velocityM1M2*cosd(Θ),0]
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
