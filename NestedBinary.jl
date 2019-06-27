@@ -3,18 +3,22 @@ import LinearAlgebra.norm
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot
-
+#!!look at how julia runs with multiple cores
 G = 2945.49 #gravitational constant
 
-
-function fileInput(file) #change initial conditions to m1, m2, m3, A1, e1, A2, e2  
+"Inputs a file and retrieves the necessary information from the file. This includes the masses of the bodies and their initial conditions."
+function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
 	fArray = [] #we need differential functions to calculate new positions and velocities with each timestep. These functions will be stored in this array. What functions are entered depends on how many bodies we are working with.
 
 	mArray = parse.(Float64,split(readlines(file)[1],",")) #this inputs the masses of the bodies
-	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial separations and eccentricities of the bodies
+	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial positions and velocities of the bodies
 
-	numBodies = length(mArray) #this is different than the number of masses, so input a test particle with m=0
+	if length(XArray)%6 != 0 #this makes sure that each body has 6 entries: a position and velocity in the x, y, and z direction.
+		error("Invalid input: not enough positions and velocities for given number of masses.")
+	end
+
+	numBodies = (length(XArray)/3)+1 #this is different than the number of masses, because the test particle counts as a massless body here
 
 	if numBodies == 3 #so, here, we either have three massive bodies or two massive bodies with a test particle
 		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C) #these are the functions we need for that
@@ -24,107 +28,99 @@ function fileInput(file) #change initial conditions to m1, m2, m3, A1, e1, A2, e
 	elseif numBodies == 4 #Main.jl cannot handle four massive bodies, so presumably, this is three massive bodies with a test particle
 		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C, f1D, f2D, f3D, f4D, f5D, f6D) #these are the functions we need
 	else
-		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. !!this should be implemented
+		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. 
 	end
 	t = parse.(Float64,split(readlines(file)[3],","))[1]
 	hParam = parse.(Float64,split(readlines(file)[3],","))[2] #these should be the elements of the third line of the .txt file
 	return fArray, XArray, mArray, t, hParam, numBodies
 end
 
+"Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
 function System(file)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, numBodies = fileInput(file) #gets info from file
 
-	#Masses: NOTE:FOR NOW WE ARE ASSUMING M1 IS ABOUT AS MASSIVE AS M2
 	M1 = m[1]
 	M2 = m[2]
 	M3 = m[3]
-	M = M1 + M2 + M3
+	M = M1+M2+M3
 
-	#Positions
-	A1 = x[1] #keeps track of the separation between bodies 1 and  2
-	A2 = x[3] #separations between the cm of bodies 1 and 2 and the mass 3
-	e1 = x[2] #eccentricity of orbit 1
-	e2 = x[4] #eccentricity of orbit 2
-	i = x[5] #inclination of third body orbit - angle between its orbital plane and the orbital plane of the inner binary
-	Θ = x[6] #offset angle - angle between the line formed by the x-axis and the x-y position of the third body. I think that this is the longitude of the ascending node-270 degrees, but I'm not sure.
-	X1 = [(-(A1*M2)/(M1+M2))-cos(Θ)*cos(i)*A2*(M3/M)]
-	X2 = [((M1*A1)/(M1 + M2))-cos(Θ)*cos(i)*A2*(M3/M)]#initial position of center mass
-	X3 = [cos(Θ)*A2*cos(i)*(M1+M2)/M] #initial position of rightmost mass
-	Y1 = [-sin(Θ)*cos(i)*A2*(M3/M)]
-	Y2 = [-sin(Θ)*cos(i)*A2*(M3/M)]
-	Y3 = [sin(Θ)*A2*cos(i)*(M1+M2)/M]
-	Z1 = [-sin(i)*A2*(M3/M)]
-	Z2 = [-sin(i)*A2*(M3/M)]
-	Z3 = [A2*sin(i)*(M1+M2)/M]
+	A1 = x[1]
+	A2 = x[3]
+	e1 = x[2]
+	e2 = x[4]
+	i = x[5]
+	Θ = x[6]
+
+	X1 = [(-(A1*M2)/(M1+M2))-cosd(Θ)*cosd(i)*A2*(M3/M)] #keeps track of the first body's x coordinate
+	X2 = [((M1*A1)/(M1 + M2))-cosd(Θ)*cosd(i)*A2*(M3/M)] #similar for these
+	X3 = [cosd(Θ)*A2*cosd(i)*(M1+M2)/M]
+	Y1 = [-sind(Θ)*cosd(i)*A2*(M3/M)]
+	Y2 = [-sind(Θ)*cosd(i)*A2*(M3/M)]
+	Y3 = [sind(Θ)*A2*cosd(i)*(M1+M2)/M]
+	Z1 = [-sind(i)*A2*(M3/M)]
+	Z2 = [-sind(i)*A2*(M3/M)]
+	Z3 = [A2*sind(i)*(M1+M2)/M]
 	if numBodies == 4
 		X4 = [x[7]]
 		Y4 = [x[8]]
 		Z4 = [x[9]]
 	end
 
-	#separations
-	R₁ = [X1[1], Y1[1], Z1[1]] #Distance of body 1 from origin
-	R₂ = [X2[1], Y2[1], Z2[1]] #similar
-	R₃ = [X3[1], Y3[1], Z3[1]]
+	R₁ = [X1[1],Y1[1],Z1[1]]
+	R₂ = [X2[1],Y2[1],Z2[1]]
+	R₃ = [X3[1],Y3[1],Z3[1]]
 	CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
-	R₁₂ = R₁-R₂ #Distance from body 1 to 2
+	R₁₂ = R₁-R₂
 	R₁₃ = R₁-R₃
 	R₂₃ = R₂-R₃
 	velocityM3 = sqrt(G*(M1+M2)^2*(1-e2)/(A2*M))
 	velocityM1M2 = sqrt((G*(M3^2)*(1-e2))/(A2*M)) #velocity of inner CM
-	V₁ = [velocityM1M2*sin(Θ), -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cos(Θ),0.0]
-	V₂ = [-velocityM1M2*sin(Θ), sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cos(Θ),0.0]
-	V₃ = [velocityM3*sin(Θ), velocityM3*cos(Θ),0.0]
-	CMv₁₂ = [-velocityM1M2*sin(Θ), -velocityM1M2*cos(Θ),0]
+	V₁ = [velocityM1M2*sind(Θ), -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ),0.0]
+	V₂ = [-velocityM1M2*sind(Θ), sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ),0.0]
+	V₃ = [velocityM3*sind(Θ), velocityM3*cosd(Θ),0.0]
+	if numBodies>3
+		V₄ = [x[7],x[8],x[9]]
+	end
+	CMv₁₂ = [-velocityM1M2*sind(Θ), -velocityM1M2*cosd(Θ),0]
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
-	p = [R₁[1], R₁[2], R₁[3], V₁[1], V₁[2], V₁[3], R₂[1], R₂[2], R₂[3], V₂[1], V₂[2], V₂[3], R₃[1], R₃[2], R₃[3], V₃[1], V₃[2], V₃[3]]
 
-	K = .5*M1*norm(V₁)^2+.5*M2*norm(V₂)^2+.5*M3*norm(V₃)^2 #overall kinetic energy
-	U = G*M1*M2/norm(R₁₂)+G*M1*M3/norm(R₁₃)+G*M2*M3/norm(R₂₃) #total gravitational potential energy
+	K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
+	U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
 	E = K - U #total energy
-	E₁ = .5*M1*norm(V₁)^2+.5*M2*norm(V₂)^2 - G*M1*M2/norm(R₁₂) #Energy of the Inner Binary
-	E₂ = .5*(M1+M2)*(G*(M1+M2)/A2) + .5*M3*norm(V₃)^2 - G*(M1+M2)*M3/norm(A2) #Energy of the Outer Binary
 
-	L = cross(R₁,M1*V₁)+cross(R₂,M2*V₂)+cross(R₃,M3*V₃) #finds angular momentum of system
-
-	L₁ = cross(R₁,M1*V₁)+cross(R₂,M2*V₂) #Angular Momentum of the Inner binary
-	L₂ = cross(CM₁₂,(M1+M2)*CMv₁₂) + cross(R₃,M3*V₃) #Momentum of the Outer Binary
+	L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 
 	t0 = 0.0
 
 	Llist = [L] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
-	L₁list = [L₁]
-	L₂list = [L₂]
 	Elist = [E] #same, but for energy
-	E₁list = [E₁]
-	E₂list = [E₂]
 	Tlist = [t0] #keeps track of time independent of timestep
-	println([R₁,R₂,R₃,V₁,V₂,V₃,CMv₁₂])
-	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #=this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented=#
-	
+
+	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+
 	lList = [h] #testing length of timestep
 
+	x=vcat(X1,Y1,Z1,V₁,X2,Y2,Z2,V₂,X3,Y3,Z3,V₃)
+	if numBodies>3
+		push!(x,X4,Y4,Z4,V₄)
+	end
 	#until the desired time has been reached, the code runs RK4
-
 	while t0 < t
 		#we will add an adaptive timestep later
-		p = RK4(f, p, m, h)
+		x = RK4(f, x, m, h)
 
-		R₁ = [p[1], p[2], p[3]] #Distance of body 1 from origin
-		R₂ = [p[7], p[8], p[9]] #similar
-		R₃ = [p[13], p[14], p[15]]
-		CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2) #updated inner center of mass
+		R₁ = [x[1],x[2],x[3]]
+		R₂ = [x[7],x[8],x[9]]
+		R₃ = [x[13],x[14],x[15]]
 		R₁₂ = R₁-R₂
 		R₁₃ = R₁-R₃
 		R₂₃ = R₂-R₃
-		V₁ = [p[4],p[5],p[6]]
-		V₂ = [p[10],p[11],p[12]]
-		V₃ = [p[16],p[17],p[18]]
-		CMv₁₂ = (M1*V₁+M2*V₂)/(M1+M2)
-		
+		V₁ = [x[4],x[5],x[6]]
+		V₂ = [x[10],x[11],x[12]]
+		V₃ = [x[16],x[17],x[18]]
 		V₁₂ = V₁-V₂
 		V₁₃ = V₁-V₃
 		V₂₃ = V₂-V₃
@@ -132,47 +128,38 @@ function System(file)
 		K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
 		U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
 		E = K - U #total energy
-		E₁ = .5*M1*norm(V₁)^2+.5*M2*norm(V₂)^2 - G*M1*M2/norm(R₁₂) #Energy of the Inner Binary
-		E₂ = .5*(M1+M2)*(G*(M1+M2)/A2) + .5*M3*norm(V₃)^2 - G*(M1+M2)*M3/norm(A2)#Energy of the Outer Binary
 
 		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 
-		L₁ = cross(R₁,M1*V₁)+cross(R₂,M2*V₂) #Angular Momentum of the Inner binary
-		L₂ = cross(CM₁₂,(M1+M2)*CMv₁₂) + cross(R₃,M3*V₃) #Momentum of the Outer Binary
-
 		t0 = t0 + h #advances time
 
-		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+		h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 
 		push!(Elist,E)
-		push!(E₁list, E₁)
-		push!(E₂list, E₂)
 		push!(Llist,L)
-		push!(L₁list, L₁)
-		push!(L₂list, L₂)
-		push!(lList,h)
+	    push!(lList,h)
 		push!(Tlist,t0)
-		push!(X1,p[1])
-		push!(X2,p[7])
-		push!(X3,p[13])
-		push!(Y1,p[2]) 
-		push!(Y2,p[8])
-		push!(Y3,p[14])
-		push!(Z1,p[3])
-		push!(Z2,p[9])
-		push!(Z3,p[15])
+		push!(X1,x[1])
+		push!(X2,x[7])
+		push!(X3,x[13])
+		push!(Y1,x[2]) 
+		push!(Y2,x[8])
+		push!(Y3,x[14])
+		push!(Z1,x[3])
+		push!(Z2,x[9])
+		push!(Z3,x[15])
 		if numBodies == 4
-			push!(X4,p[19])
-			push!(Y4,p[20])
-			push!(Z4,p[21])
+			push!(X4,x[19])
+			push!(Y4,x[20])
+			push!(Z4,x[21])
 		end
 	end
 	if numBodies == 3
 		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,[],[],[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
 	else 
-		v4x, v4y, v4z = [p[22],p[23],p[24]]
+		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
-	return m, x, Elist, E₁list, E₂list, Llist, L₁list, L₂list, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam
+	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -206,9 +193,22 @@ function RK4(f,x,m,h)
 	return  x+(k1+2*k2+2*k3+k4)/6
 
 end 
+#!!change to filename, inclination
+"""
+Takes a file with the data, then plots what you choose.
 
+Plot(file, object, [fileSave, equal])
+
+The input file must be a .txt file in the format described in README.md.
+
+The object is what is plotted. If "E" is typed, then the energy will be plotted versus time. If "L" is typed, then angular momentum will be plotted versus time. If "EL" is typed, then both are plotted. "time" plots the timestep of the integration versus iteration. Finally, a color accepted by matplotlib will plot the trajectories of the bodies, one of them having a path with the color specified.
+
+fileSave is optional. However, if a string is entered, for example, "Sample.txt", then a .txt file will be created that will store the system's data. This file can then be plotted using ExternalPlotter.jl without needing to recalculate the system again.
+
+equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
+"""
 function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam = System(file)
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z = System(file)
 	L0 = Llist[1]
 	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
 	E0 = Elist[1]
@@ -290,7 +290,6 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 		end
 	end
 end
-#Begin functions for the potentials
 
 function f0(x::Array{Float64,1}) #DE for Masses
 	return 0
