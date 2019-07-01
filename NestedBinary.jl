@@ -206,11 +206,13 @@ end
 """
 Takes a file with the data, then plots what you choose.
 
-Plot(file, object, [fileSave, equal])
+Plot(file, object[, writeData, fileSave, equal])
 
 The input file must be a .txt file in the format described in README.md.
 
 The object is what is plotted. If "E" is typed, then the energy will be plotted versus time. If "L" is typed, then angular momentum will be plotted versus time. If "EL" is typed, then both are plotted. "time" plots the timestep of the integration versus iteration. Finally, a color accepted by matplotlib will plot the trajectories of the bodies, one of them having a path with the color specified.
+
+writeData is optional. If anything other than 0 is its input, it will write the data of the simulation to the NestedBinaryData spreadsheet.
 
 fileSave is optional. However, if a string is entered, for example, "Sample.txt", then a .txt file will be created that will store the system's data. This file can then be plotted using ExternalPlotter.jl without needing to recalculate the system again.
 
@@ -303,7 +305,7 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 		end
 	end
 	if writeData != 0
-		XLSX.openxlsx("NestedBinary2.xlsx",mode="rw") do xf
+		XLSX.openxlsx("NestedBinaryData.xlsx",mode="rw") do xf
 			sheet = xf[1]
 			i = 1
 			while typeof(sheet["A$i"]) != Missing #gets next blank row
