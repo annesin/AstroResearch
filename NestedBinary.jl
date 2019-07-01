@@ -3,6 +3,8 @@ import LinearAlgebra.norm
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot
+Pkg.add("XLSX")
+import XLSX
 #!!look at how julia runs with multiple cores
 G = 2945.49 #gravitational constant
 
@@ -39,6 +41,8 @@ end
 function System(file)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, numBodies = fileInput(file) #gets info from file
+
+	OriginalX = x
 
 	M1 = m[1]
 	M2 = m[2]
@@ -163,7 +167,7 @@ function System(file)
 	else 
 		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
-	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z #need initial velocities to write filename for saving
+	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0 #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -211,14 +215,17 @@ fileSave is optional. However, if a string is entered, for example, "Sample.txt"
 
 equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
 """
-function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z = System(file)
+function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+	firstTime = time() #measures runtime of program
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0 = System(file)
 	L0 = Llist[1]
 	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
 	E0 = Elist[1]
 	Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
 	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
 	println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+	NowTime = time()
+	println("This ran in $(NowTime-firstTime) seconds.")
 	if color == "L"
 		   plt.plot(Tlist,Llist) 
 	elseif color == "E"
@@ -292,6 +299,30 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 				end
 				write(f,"4")
 			end
+		end
+	end
+	if writeData != 0
+		XLSX.openxlsx("NestedBinary2.xlsx",mode="rw") do xf
+			sheet = xf[1]
+			i = 1
+			while typeof(sheet["A$i"]) != Missing #gets next blank row
+				i += 1
+			end
+			sheet["A$i"] = m[1]
+			sheet["B$i"] = m[2]
+			sheet["C$i"] = m[3]
+			sheet["D$i"] = OriginalX[1]
+			sheet["E$i"] = OriginalX[2]
+			sheet["F$i"] = OriginalX[3]
+			sheet["G$i"] = OriginalX[4]
+			sheet["H$i"] = OriginalX[5]
+			sheet["I$i"] = OriginalX[6]
+			sheet["J$i"] = t0
+			sheet["K$i"] = hParam
+			sheet["L$i"] = "[$(minimum(Elist)),$(maximum(Elist))]"
+			sheet["M$i"] = "[$(minimum(lList)),$(maximum(Llist))]"
+			sheet["P$i"] = NowTime-firstTime
+			sheet["Q$i"] = "[$(minimum(lList)),$(maximum(lList))]"
 		end
 	end
 end
