@@ -48,12 +48,12 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
 ### The .txt file must be in the following format for NestedBinary.jl:
 
   The elements are in three lines, each element being seperated by a comma:
-  1.The first line is the list of masses of the bodies.
-  2.The second line is the list of initial conditions: a₁, e₁, a₂, e₂, i, and Θ.
-    - a₁ and e₁ are the semi-major axis and eccentricity of the inner binary's orbit.
-    - a₂ and e₂ are the semi-major axis and eccentricity of the outer binary's orbit. 
-    - i is the inclination of the third body's orbit. It's measured from the plane formed by the inner binary.
-    - Θ is the angle between the line formed by the two inner bodies and the line formed from the inner binary's center of mass to the projection of the third body onto the above mentioned plane. It is also the longitude of the ascending node minus 270 degrees.
+  1. The first line is the list of masses of the bodies.
+  2. The second line is the list of initial conditions: a₁, e₁, a₂, e₂, i, and Θ.
+     - a₁ and e₁ are the semi-major axis and eccentricity of the inner binary's orbit.
+     - a₂ and e₂ are the semi-major axis and eccentricity of the outer binary's orbit. 
+     - i is the inclination of the third body's orbit. It's measured from the plane formed by the inner binary.
+     - Θ is the angle between the line formed by the two inner bodies and the line formed from the inner binary's center of mass to the projection of the third body onto the above mentioned plane. It is also the longitude of the ascending node minus 270 degrees.
   3. The third line consists of the time the simulation should run for and the timestep parameter (see above).
 
   Example:
