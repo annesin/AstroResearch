@@ -309,6 +309,11 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 			sheet = xf[1]
 			i = 1
 			while typeof(sheet["A$i"]) != Missing #gets next blank row
+				if [sheet["A$i"],sheet["B$i"],sheet["C$i"],sheet["D$i"],sheet["E$i"],sheet["F$i"],sheet["G$i"],sheet["H$i"],sheet["I$i"],sheet["J$i"],sheet["K$i"]]==[m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],t0,hParam]
+					error("Not saving to spreadsheet: This data already has an entry at line $i.")
+				end
+				#println([sheet["A$i"],sheet["B$i"]sheet["C$i"]sheet["D$i"]sheet["E$i"]sheet["F$i"]sheet["G$i"]sheet["H$i"]sheet["I$i"]sheet["J$i"]sheet["K$i"]])
+				#println([m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],t0,hParam])
 				i += 1
 			end
 			sheet["A$i"] = m[1]
