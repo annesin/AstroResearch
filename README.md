@@ -3,8 +3,9 @@
 This program is designed to input a .txt file of parameters and create a triple system and a star. The program is used to simulate accretion of the star by the system.
 For just a binary system, use systemrk.jl. For more particles, use Main.jl. For a nested binary system, use NestedBinary.jl
 
-##systemrk.jl
-The .txt file must be in the following format for the systemrk.jl:
+## systemrk.jl
+
+### The .txt file must be in the following format for the systemrk.jl:
   
   There are six elements in one line, each seperated by a comma.
   
@@ -23,11 +24,13 @@ The .txt file must be in the following format for the systemrk.jl:
   The sixth parameter is the timestep parameter, which determines the length of the timestep the program uses
   
   Example (black hole-star system): 
+  ```
   1,8,4.20984,0.2,0,0.001
-  (See systemrk_input.txt)
+  ```
 
-##Main.jl
-The .txt file must be in the following format for Main.jl:
+## Main.jl
+
+### The .txt file must be in the following format for Main.jl:
 
   The elements are in three lines, each element being seperated by a comma.
 
@@ -42,13 +45,16 @@ The .txt file must be in the following format for Main.jl:
   The third line consists of the total time the simulation runs for and the timestep parameter (see above).
 
   Example:
+  ```
   1,0.000003003,0.00000003694
   0,0,0,0,0,0,215.032,0,0,0,3.7,0,215.585,0,0,0,3.826,0,0,1,0,0,0,50 
   365,0.00001
-  Sun-Earth-Moon system with a test particle with a polar orbit around the Sun
+  #Sun-Earth-Moon system with a test particle with a polar orbit around the Sun
+  ```
 
-##NestedBinary.jl
-The .txt file must be in the following format for NestedBinary.jl:
+## NestedBinary.jl
+
+### The .txt file must be in the following format for NestedBinary.jl:
 
   The elements are in three lines, each element being seperated by a comma.
 
@@ -65,7 +71,9 @@ The .txt file must be in the following format for NestedBinary.jl:
   The third line consists of the time the simulation should run for and the timestep parameter (see above).
 
   Example:
+  ```
   8,8,1
   2,0,20,0.99,0,0
   10,0.0001
+  ```
 
