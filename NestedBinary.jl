@@ -3,6 +3,7 @@ import LinearAlgebra.norm
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot
+Pkg.clone("https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add("XLSX")
 import XLSX
 #!!look at how julia runs with multiple cores
