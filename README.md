@@ -3,6 +3,7 @@
 This program is designed to input a .txt file of parameters and create a triple system and a star. The program is used to simulate accretion of the star by the system.
 For just a binary system, use systemrk.jl. For more particles, use Main.jl. For a nested binary system, use NestedBinary.jl
 
+##systemrk.jl
 The .txt file must be in the following format for the systemrk.jl:
   
   There are six elements in one line, each seperated by a comma.
@@ -25,6 +26,7 @@ The .txt file must be in the following format for the systemrk.jl:
   1,8,4.20984,0.2,0,0.001
   (See systemrk_input.txt)
 
+##Main.jl
 The .txt file must be in the following format for Main.jl:
 
   The elements are in three lines, each element being seperated by a comma.
@@ -45,6 +47,7 @@ The .txt file must be in the following format for Main.jl:
   365,0.00001
   Sun-Earth-Moon system with a test particle with a polar orbit around the Sun
 
+##NestedBinary.jl
 The .txt file must be in the following format for NestedBinary.jl:
 
   The elements are in three lines, each element being seperated by a comma.
