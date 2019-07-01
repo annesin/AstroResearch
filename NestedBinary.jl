@@ -95,17 +95,26 @@ function System(file)
 	V₁ -= VCM
 	V₂ -= VCM
 	V₃ -= VCM
+	VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2]) #velocity of inner center of mass
 
 	K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
 	U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
 	E = K - U #total energy
-
 	L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
+
+	E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
+	E₂ = .5*(m[1]+m[2])*norm(VINCM)^2+.5*m[3]*norm(V₃)^2 - G*(m[1]+m[2])*m[3]/norm(R₃-CM₁₂)#Energy of outer binary
+	L₁ = cross(R₁-CM₁₂,m[1]*(V₁-VINCM))+cross(R₂-CM₁₂,m[2]*(V₂-VINCM)) #momentum of inner binary
+	L₂ = cross(CM₁₂,(m[1]+m[2])*VINCM)+cross(R₃,m[3]*V₃) #momentum of outer Binary
 
 	t0 = 0.0
 
 	Llist = [L] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
 	Elist = [E] #same, but for energy
+	E₁list = [E₁]
+	E₂list = [E₂]
+	L₁list = [L₁]
+	L₂list = [L₂]
 	Tlist = [t0] #keeps track of time independent of timestep
 
 	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
@@ -127,18 +136,24 @@ function System(file)
 		R₁₂ = R₁-R₂
 		R₁₃ = R₁-R₃
 		R₂₃ = R₂-R₃
+		CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
 		V₁ = [x[4],x[5],x[6]]
 		V₂ = [x[10],x[11],x[12]]
 		V₃ = [x[16],x[17],x[18]]
 		V₁₂ = V₁-V₂
 		V₁₃ = V₁-V₃
 		V₂₃ = V₂-V₃
+		VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
 
 		K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
 		U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
 		E = K - U #total energy
-
 		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
+		
+		E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
+		E₂ = .5*(m[1]+m[2])*norm(VINCM)^2+.5*m[3]*norm(V₃)^2 - G*(m[1]+m[2])*m[3]/norm(R₃-CM₁₂)#Energy of outer binary
+		L₁ = cross(R₁-CM₁₂,m[1]*(V₁-VINCM))+cross(R₂-CM₁₂,m[2]*(V₂-VINCM)) #momentum of inner binary
+		L₂ = cross(CM₁₂,(m[1]+m[2])*VINCM)+cross(R₃,m[3]*V₃) #momentum of outer Binary
 
 		t0 = t0 + h #advances time
 
@@ -146,7 +161,11 @@ function System(file)
 
 		push!(Elist,E)
 		push!(Llist,L)
-	    push!(lList,h)
+		push!(E₁list,E₁)
+		push!(E₂list,E₂)
+		push!(L₁list,L₁)
+		push!(L₂list,L₂)
+	   	push!(lList,h)
 		push!(Tlist,t0)
 		push!(X1,x[1])
 		push!(X2,x[7])
