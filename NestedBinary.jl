@@ -33,15 +33,21 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 	else
 		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. 
 	end
-	t = parse.(Float64,split(readlines(file)[3],","))[1]
-	hParam = parse.(Float64,split(readlines(file)[3],","))[2] #these should be the elements of the third line of the .txt file
-	return fArray, XArray, mArray, t, hParam, numBodies
+	try 
+		global t = parse.(Float64,split(readlines(file)[3],","))[1]
+		global notPeriods = true
+	catch
+		global t = (XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3]))*parse(Float64,split(readlines(file)[3],",")[1][1:end-1]) #number of periods
+		global notPeriods = parse(Float64,split(readlines(file)[3],",")[1][1:end-1])
+	end
+	hParam = parse.(Float64,split(readlines(file)[3],",")[2]) #these should be the elements of the third line of the .txt file
+	return fArray, XArray, mArray, t, hParam, numBodies, notPeriods
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
 function System(file)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
-	f, x, m, t, hParam, numBodies = fileInput(file) #gets info from file
+	f, x, m, t, hParam, numBodies, periods = fileInput(file) #gets info from file
 
 	OriginalX = x
 
@@ -187,7 +193,7 @@ function System(file)
 	else 
 		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
-	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list #need initial velocities to write filename for saving
+	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -239,7 +245,7 @@ equal is also optional. Plot() equalizes the axes of the trajectories by default
 """
 function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list = System(file)
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file)
 	L0 = Llist[1]
 	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
 	E0 = Elist[1]
@@ -268,6 +274,7 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 		   plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
 	elseif color == "time"
 		   plt.plot(lList,linestyle="solid",color="green")
+	elseif color == "none" #used for automatic testing
 	else
 		if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
 			plt.plot(X1,Y1,linestyle="solid",color="red")
@@ -356,7 +363,11 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 				sheet["G$i"] = OriginalX[4]
 				sheet["H$i"] = OriginalX[5]
 				sheet["I$i"] = OriginalX[6]
-				sheet["J$i"] = t0
+				if periods == true
+					sheet["J$i"] = t0
+				else
+					sheet["J$i"] = "$periods periods"
+				end
 				sheet["K$i"] = hParam
 				sheet["L$i"] = "[$(minimum(Elist)),$(maximum(Elist))]"
 				sheet["M$i"] = "[$(minimum(Llist)),$(maximum(Llist))]"
@@ -369,6 +380,14 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 				sheet["T$i"] = stability
 			end
 		end
+	end
+end
+
+function AutomaticTester(n, file, fileSave=0)
+	for i in 1:n
+		x = open("NBinput.txt","w")
+		write(x,"")
+		Plot(file, "none")
 	end
 end
 
