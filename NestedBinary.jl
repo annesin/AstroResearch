@@ -187,7 +187,7 @@ function System(file)
 	else 
 		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
-	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0 #need initial velocities to write filename for saving
+	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -231,7 +231,7 @@ The input file must be a .txt file in the format described in README.md.
 
 The object is what is plotted. If "E" is typed, then the energy will be plotted versus time. If "L" is typed, then angular momentum will be plotted versus time. If "EL" is typed, then both are plotted. "time" plots the timestep of the integration versus iteration. Finally, a color accepted by matplotlib will plot the trajectories of the bodies, one of them having a path with the color specified.
 
-writeData is optional. If anything other than 0 is its input, it will write the data of the simulation to the NestedBinaryData spreadsheet.
+writeData is optional. Unless something other than 0 is its input, it will write the data of the simulation to the NestedBinaryData spreadsheet.
 
 fileSave is optional. However, if a string is entered, for example, "Sample.txt", then a .txt file will be created that will store the system's data. This file can then be plotted using ExternalPlotter.jl without needing to recalculate the system again.
 
@@ -239,7 +239,7 @@ equal is also optional. Plot() equalizes the axes of the trajectories by default
 """
 function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0 = System(file)
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list = System(file)
 	L0 = Llist[1]
 	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
 	E0 = Elist[1]
@@ -248,6 +248,17 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 	println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
 	NowTime = time()
 	println("This ran in $(NowTime-firstTime) seconds.")
+	#=stability calculation=#
+	if E₁list[end]>0
+		stability = 0
+		println("This is an unstable system.")
+	elseif E₂list[end]>0
+		stability = 0.5
+		println("This is a partially unstable system.")
+	else
+		stability = 1
+		println("This is a stable system.")
+	end
 	if color == "L"
 		   plt.plot(Tlist,Llist) 
 	elseif color == "E"
@@ -323,33 +334,40 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 			end
 		end
 	end
-	if writeData != 0
-		XLSX.openxlsx("NestedBinaryData.xlsx",mode="rw") do xf
+	if writeData == 0
+		XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
 			sheet = xf[1]
 			i = 1
+			record = true
 			while typeof(sheet["A$i"]) != Missing #gets next blank row
 				if [sheet["A$i"],sheet["B$i"],sheet["C$i"],sheet["D$i"],sheet["E$i"],sheet["F$i"],sheet["G$i"],sheet["H$i"],sheet["I$i"],sheet["J$i"],sheet["K$i"]]==[m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],t0,hParam]
-					error("Not saving to spreadsheet: This data already has an entry at line $i.")
+					println("Not saving to spreadsheet: This data already has an entry at line $i.")
+					record = false
 				end
-				#println([sheet["A$i"],sheet["B$i"]sheet["C$i"]sheet["D$i"]sheet["E$i"]sheet["F$i"]sheet["G$i"]sheet["H$i"]sheet["I$i"]sheet["J$i"]sheet["K$i"]])
-				#println([m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],t0,hParam])
 				i += 1
 			end
-			sheet["A$i"] = m[1]
-			sheet["B$i"] = m[2]
-			sheet["C$i"] = m[3]
-			sheet["D$i"] = OriginalX[1]
-			sheet["E$i"] = OriginalX[2]
-			sheet["F$i"] = OriginalX[3]
-			sheet["G$i"] = OriginalX[4]
-			sheet["H$i"] = OriginalX[5]
-			sheet["I$i"] = OriginalX[6]
-			sheet["J$i"] = t0
-			sheet["K$i"] = hParam
-			sheet["L$i"] = "[$(minimum(Elist)),$(maximum(Elist))]"
-			sheet["M$i"] = "[$(minimum(lList)),$(maximum(Llist))]"
-			sheet["P$i"] = NowTime-firstTime
-			sheet["Q$i"] = "[$(minimum(lList)),$(maximum(lList))]"
+			if record
+				sheet["A$i"] = m[1]
+				sheet["B$i"] = m[2]
+				sheet["C$i"] = m[3]
+				sheet["D$i"] = OriginalX[1]
+				sheet["E$i"] = OriginalX[2]
+				sheet["F$i"] = OriginalX[3]
+				sheet["G$i"] = OriginalX[4]
+				sheet["H$i"] = OriginalX[5]
+				sheet["I$i"] = OriginalX[6]
+				sheet["J$i"] = t0
+				sheet["K$i"] = hParam
+				sheet["L$i"] = "[$(minimum(Elist)),$(maximum(Elist))]"
+				sheet["M$i"] = "[$(minimum(Llist)),$(maximum(Llist))]"
+				sheet["N$i"] = "[$(minimum(E₁list)),$(maximum(E₁list))]"
+				sheet["O$i"] = "$(minimum(E₂list)),$(maximum(E₂list))]"
+				sheet["P$i"] = "$(minimum(L₁list)),$(maximum(L₁list))]"
+				sheet["Q$i"] = "$(minimum(L₂list)),$(maximum(L₂list))]"
+				sheet["R$i"] = NowTime-firstTime
+				sheet["S$i"] = "[$(minimum(lList)),$(maximum(lList))]"
+				sheet["T$i"] = stability
+			end
 		end
 	end
 end
