@@ -258,7 +258,7 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 		println("This is a stable system.")
 	end
 	L0 = Llist[1]
-	Llist = map(x -> (x-L0),Llist) #plotting ΔL, not L
+	Llist = map(x -> (x-L0)/norm(L0),Llist) #plotting ΔL, not L
 	E0 = Elist[1]
 	Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
 	E10 = E₁list[1]
@@ -266,9 +266,9 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 	E20 = E₂list[1]
 	E₂list = map(x -> (x-E20)/E20,E₂list)
 	L10 = L₁list[1]
-	L₁list = map(x -> (x-L10),L₁list) #plotting ΔL, not L
+	L₁list = map(x -> (x-L10)/norm(L10),L₁list) #plotting ΔL, not L
 	L20 = L₂list[1]
-	L₂list = map(x -> (x-L20),L₂list) #plotting ΔL, not L
+	L₂list = map(x -> (x-L20)/norm(L20),L₂list) #plotting ΔL, not L
 	NowTime = time()
 	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
 	println("The angular momentum varied by $(minimum(map(x -> norm(x),Llist))) to $(maximum(map(x -> norm(x),Llist))) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
@@ -404,11 +404,20 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 				end
 				sheet["K$i"] = hParam
 				sheet["L$i"] = "[$(minimum(Elist)),$(maximum(Elist))]"
-				sheet["M$i"] = "[$(minimum(Llist)),$(maximum(Llist))]"
+				Lx = map(x -> x[1],Llist)
+				Ly = map(x -> x[2],Llist)
+				Lz = map(x -> x[3],Llist)
+				sheet["M$i"] = "[[$(minimum(Lx)),$(minimum(Ly)),$(minimum(Lz))],[$(maximum(Lx)),$(maximum(Ly)),$(maximum(Lz))]]"
 				sheet["N$i"] = "[$(minimum(E₁list)),$(maximum(E₁list))]"
-				sheet["O$i"] = "$(minimum(E₂list)),$(maximum(E₂list))]"
-				sheet["P$i"] = "$(minimum(L₁list)),$(maximum(L₁list))]"
-				sheet["Q$i"] = "$(minimum(L₂list)),$(maximum(L₂list))]"
+				sheet["O$i"] = "[$(minimum(E₂list)),$(maximum(E₂list))]"
+				L1x = map(x -> x[1],L₁list)
+				L1y = map(x -> x[2],L₁list)
+				L1z = map(x -> x[3],L₁list)
+				L2x = map(x -> x[1],L₂list)
+				L2y = map(x -> x[2],L₂list)
+				L2z = map(x -> x[3],L₂list)
+				sheet["P$i"] = "[[$(minimum(L1x)),$(minimum(L1y)),$(minimum(L1z))],[$(maximum(L1x)),$(maximum(L1y)),$(maximum(L1z))]]"
+				sheet["Q$i"] = "[[$(minimum(L2x)),$(minimum(L2y)),$(minimum(L2z))],[$(maximum(L2x)),$(maximum(L2y)),$(maximum(L2z))]]"
 				sheet["R$i"] = NowTime-firstTime
 				sheet["S$i"] = "[$(minimum(lList)),$(maximum(lList))]"
 				sheet["T$i"] = stability
