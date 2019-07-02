@@ -247,12 +247,20 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 	firstTime = time() #measures runtime of program
 	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file)
 	L0 = Llist[1]
-	Llist = map(x -> norm(x-L0),Llist) #plotting the magntiude of the difference vector from L0
+	Llist = map(x -> (x-L0),Llist) #plotting ΔL, not L
 	E0 = Elist[1]
 	Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
-	println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
+	E10 = E₁list[1]
+	E₁list = map(x -> (x-E10)/E10,E₁list)
+	E20 = E₂list[1]
+	E₂list = map(x -> (x-E20)/E20,E₂list)
+	L10 = L₁list[1]
+	L₁list = map(x -> (x-L10),L₁list) #plotting ΔL, not L
+	L20 = L₂list[1]
+	L₂list = map(x -> (x-L20),L₂list) #plotting ΔL, not L
 	NowTime = time()
+	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
+	println("The angular momentum varied by $(minimum(map(x -> norm(x-L0),Llist))) to $(maximum(map(x -> norm(x-L0),Llist))) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
 	println("This ran in $(NowTime-firstTime) seconds.")
 	#=stability calculation=#
 	if E₁list[end]>0
@@ -266,14 +274,40 @@ function Plot(file, color, writeData=0, fileSave=0, equal=0) #plotting L, E, or 
 		println("This is a stable system.")
 	end
 	if color == "L"
-		   plt.plot(Tlist,Llist) 
+		   plt.plot(Tlist,map(x -> x[1],Llist,linestyle="solid",color="red"))
+		   plt.plot(Tlist,map(x -> x[2],Llist,linestyle="solid",color="green")) 
+		   plt.plot(Tlist,map(x -> x[3],Llist,linestyle="solid",color="blue")) #plotting change in individual components
 	elseif color == "E"
 		   plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
 	elseif color == "EL"
-		   plt.plot(Tlist,Llist,linestyle="solid",color="green") 
+		plt.plot(Tlist,map(x -> x[1],Llist,linestyle="solid",color="green"))
+		plt.plot(Tlist,map(x -> x[2],Llist,linestyle="solid",color="blue")) 
+		plt.plot(Tlist,map(x -> x[3],Llist,linestyle="solid",color="magenta")) #plotting change in individual components
 		   plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+	elseif color == "E1"
+		plt.plot(Tlist,E₁list)
+	elseif color == "L1"
+		plt.plot(Tlist,map(x -> x[1],L₁list,linestyle="solid",color="red"))
+		plt.plot(Tlist,map(x -> x[2],L₁list,linestyle="solid",color="green")) 
+		plt.plot(Tlist,map(x -> x[3],L₁list,linestyle="solid",color="blue")) #plotting change in individual components
+	elseif color == "E2"
+		plt.plot(Tlist,E₂list)
+	elseif color == "L2"
+		plt.plot(Tlist,map(x -> x[1],L₂list,linestyle="solid",color="red"))
+		plt.plot(Tlist,map(x -> x[2],L₂list,linestyle="solid",color="green")) 
+		plt.plot(Tlist,map(x -> x[3],L₂list,linestyle="solid",color="blue")) #plotting change in individual components
+	elseif color == "Es"
+		plt.plot(Tlist,E₁list,linestyle="solid",color="green")
+		plt.plot(Tlist,E₂list,linestyle="solid",color="red")
+	elseif color == "Ls"
+		plt.plot(Tlist,map(x -> x[1],L₁list,linestyle="solid",color="red"))
+		plt.plot(Tlist,map(x -> x[2],L₁list,linestyle="solid",color="green")) 
+		plt.plot(Tlist,map(x -> x[3],L₁list,linestyle="solid",color="blue")) #plotting change in individual components
+		plt.plot(Tlist,map(x -> x[1],L₂list,linestyle="solid",color="cyan"))
+		plt.plot(Tlist,map(x -> x[2],L₂list,linestyle="solid",color="magneta")) 
+		plt.plot(Tlist,map(x -> x[3],L₂list,linestyle="solid",color="yellow")) #plotting change in individual components
 	elseif color == "time"
-		   plt.plot(lList,linestyle="solid",color="green")
+		plt.plot(lList,linestyle="solid",color="green")
 	elseif color == "none" #used for automatic testing
 	else
 		if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
