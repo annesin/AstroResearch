@@ -255,6 +255,7 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 				for i in 1:length(bigArray)
 					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
 				end
+				write(f,"M")
 			end
 		else
 			#open("h≈(r÷v) data files/$(round(m[1];digits=5)), $(round(m[2];digits=5)), $(round(m[3];digits=5)), $(round(X1[1];digits=5)), $(round(Y1[1];digits=5)), $(round(Z1[1];digits=5)), $(round(v1x;digits=5)), $(round(v1y;digits=5)) $(round(v1z;digits=5)), $(round(X2[1];digits=5)), $(round(Y2[1];digits=5)), $(round(Z2[1];digits=5)), $(round(v2x;digits=5)), $(round(v2y;digits=5)), $(round(v2z;digits=5)), $(round(X3[1];digits=5)), $(round(Y3[1];digits=5)), $(round(Z3[1];digits=5)), $(round(v3x;digits=5)), $(round(v3y;digits=5)), $(round(v3z;digits=5)), $(round(X4[1];digits=5)), $(round(Y4[1];digits=5)), $(round(Z4[1];digits=5)), $(round(v4x;digits=1)), $(round(v4y;digits=5)), $(round(v4z;digits=5)), $hParam.txt","w") do f #UGH I had to do this because otherwise the file name would've been too long (ノಠ益ಠ)ノ彡┻━┻
@@ -263,7 +264,7 @@ function Plot(file, color, fileSave=0, equal=0) #plotting L, E, or positions ove
 				for i in 1:length(bigArray)
 					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
 				end
-				write(f,"4")
+				write(f,"M")
 			end
 		end
 	end
