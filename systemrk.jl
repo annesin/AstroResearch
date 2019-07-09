@@ -218,6 +218,7 @@ function Plot(file, color, fileSave=0) #plotting L, E, or positions over time, t
                      for i in 1:8
                             write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
                      end
+                     write(f,"S")
               end
        end
 end
