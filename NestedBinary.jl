@@ -33,15 +33,15 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 	else
 		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. 
 	end
-	try 
-		global t = parse.(Float64,split(readlines(file)[3],","))[1]
-		global notPeriods = true
-	catch
-		global t = (XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3]))*parse(Float64,split(readlines(file)[3],",")[1][1:end-1]) #number of periods
-		global notPeriods = parse(Float64,split(readlines(file)[3],",")[1][1:end-1])
-	end
+	t, notPeriods = Pfunction(file,XArray,mArray)
 	hParam = parse.(Float64,split(readlines(file)[3],",")[2]) #these should be the elements of the third line of the .txt file
 	return fArray, XArray, mArray, t, hParam, numBodies, notPeriods
+end
+
+Pfunction(file,XArray,mArray) = try
+	[parse.(Float64,split(readlines(file)[3],","))[1],true]
+catch
+	[(XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3]))*parse(Float64,split(readlines(file)[3],",")[1][1:end-1]),parse(Float64,split(readlines(file)[3],",")[1][1:end-1])] #number of periods
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
@@ -349,13 +349,14 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 		end
 		tracker = [] #this will store a data point for each 1D array
 		for i in 1:length(bigArray)
-			if occursin("rray{Float64,1}","$(bigArray[i])")
-				push!(tracker,17)
+			if occursin("Array{Float64,1}","$(bigArray[i])")
+				push!(tracker,18)
 			elseif occursin("Any","$(bigArray[i])") #we loop through each stringed version of the array to see if "Any[" is at the beginning of any of them
 				push!(tracker,5) #if there is, we store a 5
 			else
 				push!(tracker,2) #if there isn't, we store a 2
 			end
+			bigArray[i]=bigArray[i][1:convert(Int,floor(NowTime-firstTime)):end]#we only save every nth term, where n is the amount of time it took to run the code
 		end
 		if numBodies == 3
 			#=I'm saving these in case we need them later
@@ -363,8 +364,9 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 			open("h≈(r÷v) data files/$fileSave","w") do f
 				write(f,"3","\n")
 				for i in 1:length(bigArray)
-					write(f, "$(bigArray[i])"[tracker[i]:convert(Int,floor(NowTime-firstTime)):end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ]. Also, we only save every nth term, where n is the amount of time it took to run the code
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
 				end
+				write(f,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
 				write(f,"N")
 			end
 		else
@@ -372,8 +374,9 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 			open("h≈(r÷v) data files/$fileSave","w") do f
 				write(f,"4","\n")
 				for i in 1:length(bigArray)
-					write(f, "$(bigArray[i])"[tracker[i]:convert(Int,floor(NowTime-firstTime)):end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
+					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
 				end
+				write(f,"$m","\n","$OriginalX","\n")
 				write(f,"N")
 			end
 		end
@@ -429,11 +432,20 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 	end
 end
 
-function AutomaticTester(n, file, fileSave=0)
-	for i in 1:n
-		x = open("NBinput.txt","w")
-		write(x,"")
-		Plot(file, "none")
+function AutomaticTester(fileSave)
+	file = "AutomaticTester.txt"
+	counter = 0
+	Masses = ["8,8,1","1.5,1.5,1","8,5,1","8,1.5,1"]
+	Eccentricities = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
+	for i in 1:4, j in -2:0.1:0, k in 1:11, l in 2:10
+		x = open("$file","w")
+		write(x,"$(Masses[i])\n")
+		write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n")
+		write(x,"10,0.001")
+		close(x)
+		Plot(file, "none", "$fileSave"*"_$counter"*".txt")
+		rm(file)
+		counter+=1
 	end
 end
 

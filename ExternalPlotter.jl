@@ -16,9 +16,9 @@ equal is optional. By default, the plot of the trajectories will have equal axes
 """
 function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
     file = "h≈(r÷v) data files/$file"
-    type = parse.(String,readlines(file)[end])
+    type = readlines(file)[end]
     numBodies = parse.(Int64,readlines(file)[1])
-    Llist = parse.(Float64,split(readlines(file)[2],","))
+    Llist = LlistCreator(readlines(file)[2])
     Elist = parse.(Float64,split(readlines(file)[3],",")) 
     Tlist = parse.(Float64,split(readlines(file)[4],",")) 
     lList = parse.(Float64,split(readlines(file)[5],",")) 
@@ -89,4 +89,13 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
             end
         end
     end
+end
+
+LlistCreator(List) = try
+        parse.(Float64,split(List,","))
+catch
+        List = replace(List, "["=>"")
+        firstArray = split(List,"],")
+        firstArray=firstArray[1:end-1]
+        [parse.(Float64,split(x,",")) for x in firstArray]
 end
