@@ -283,7 +283,7 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 		plt.plot(Tlist,map(x -> x[1],Llist),linestyle="solid",color="green")
 		plt.plot(Tlist,map(x -> x[2],Llist),linestyle="solid",color="blue") 
 		plt.plot(Tlist,map(x -> x[3],Llist),linestyle="solid",color="darkblue") #plotting change in individual components
-		   plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+		plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
 	elseif color == "E1"
 		plt.plot(Tlist,E₁list)
 	elseif color == "L1"
@@ -347,6 +347,7 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 		if numBodies == 4
 			push!(bigArray,X4,Y4,Z4)
 		end
+		push!(bigArray,L₁list,L₂list,[NowTime-firstTime],E₁list,E₂list)
 		tracker = [] #this will store a data point for each 1D array
 		for i in 1:length(bigArray)
 			if occursin("Array{Float64,1}","$(bigArray[i])")
