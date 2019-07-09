@@ -385,7 +385,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 			end
 		end
 	end
-	rowNumber = 0
+	record = false
 	if writeData == 0
 		XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
 			sheet = xf[1]
@@ -436,7 +436,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 			end
 		end
 	end
-	return minimum(Elist), maximum(Elist) #in order to check if this is a good simulation in the automatic tester
+	return record, minimum(Elist), maximum(Elist) #in order to check if this is a good simulation in the automatic tester
 end
 
 function AutomaticTester(fileSave,precision,iI=1,iJ=-2,iK=1,iL=2)
@@ -454,7 +454,15 @@ function AutomaticTester(fileSave,precision,iI=1,iJ=-2,iK=1,iL=2)
 			write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n")
 			write(x,"10,$hParam")
 			close(x)
-			minE, maxE = Plot(file, "none", "$fileSave"*"_$counter"*".txt")
+			XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
+				sheet = xf[1]
+				j = 1
+				while typeof(sheet["A$i"]) != Missing #gets next blank row
+					j += 1
+				end
+			end
+			rowNumber = j
+			recording, minE, maxE = Plot(file, "none", "$fileSave"*"_$rowNumber"*".txt")
 			if minE<-10.0^(-precision) || maxE>10.0^(-precision)
 				if smallCounter > 5 #failsafe
 					println("I'm breaking!")
@@ -468,6 +476,9 @@ function AutomaticTester(fileSave,precision,iI=1,iJ=-2,iK=1,iL=2)
 				continuing == true
 			end
 			rm(file)
+			if recording == false
+				rm("$fileSave"*"_$rowNumber"*".txt") #deletes .txt file if we're not recording it in the spreadsheet
+			end
 		end
 		counter+=1
 	end
