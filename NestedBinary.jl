@@ -164,7 +164,6 @@ function System(file)
 		t0 = t0 + h #advances time
 
 		h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-
 		push!(Elist,E)
 		push!(Llist,L)
 		push!(E₁list,E₁)
@@ -243,7 +242,7 @@ fileSave is optional. However, if a string is entered, for example, "Sample.txt"
 
 equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
 """
-function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
 	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file)
 	#=stability calculation=#
@@ -386,6 +385,7 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 			end
 		end
 	end
+	record = false
 	if writeData == 0
 		XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
 			sheet = xf[1]
@@ -398,6 +398,7 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 				end
 				i += 1
 			end
+			rowNumber = i
 			if record
 				sheet["A$i"] = m[1]
 				sheet["B$i"] = m[2]
@@ -435,21 +436,50 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 			end
 		end
 	end
+	return record, minimum(Elist), maximum(Elist) #in order to check if this is a good simulation in the automatic tester
 end
 
-function AutomaticTester(fileSave,iI=1,iJ=-2,iK=1,iL=2)
+function AutomaticTester(fileSave,precision,iI=1,iJ=-2,iK=1,iL=2)
 	file = "AutomaticTester.txt"
-	counter = 0
+	counter = 1
 	Masses = ["8,8,1","1.5,1.5,1","8,5,1","8,1.5,1"]
 	Eccentricities = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
 	for i in iI:4, j in iJ:0.1:0, k in iK:11, l in iL:10
-		x = open("$file","w")
-		write(x,"$(Masses[i])\n")
-		write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n")
-		write(x,"10,0.001")
-		close(x)
-		Plot(file, "none", "$fileSave"*"_$counter"*".txt")
-		rm(file)
+		hParam = 0.0001 #check and change this
+		continuing = false
+		smallCounter = 1
+		while continuing == false
+			x = open("$file","w")
+			write(x,"$(Masses[i])\n")
+			write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n")
+			write(x,"10,$hParam")
+			close(x)
+			XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
+				sheet = xf[1]
+				j = 1
+				while typeof(sheet["A$i"]) != Missing #gets next blank row
+					j += 1
+				end
+			end
+			rowNumber = j
+			recording, minE, maxE = Plot(file, "none", "$fileSave"*"_$rowNumber"*".txt")
+			if minE<-10.0^(-precision) || maxE>10.0^(-precision)
+				if smallCounter > 5 #failsafe
+					println("I'm breaking!")
+					continuing == true
+				else
+					println("Not precision enough, recalculating.")  #!!make sure to delete excel row
+					hParam *= 0.1
+					smallCounter+=1
+				end
+			else
+				continuing == true
+			end
+			rm(file)
+			if recording == false
+				rm("$fileSave"*"_$rowNumber"*".txt") #deletes .txt file if we're not recording it in the spreadsheet
+			end
+		end
 		counter+=1
 	end
 end
