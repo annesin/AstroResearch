@@ -357,7 +357,11 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 			else
 				push!(tracker,2) #if there isn't, we store a 2
 			end
-			bigArray[i]=bigArray[i][1:convert(Int,floor(NowTime-firstTime)):end]#we only save every nth term, where n is the amount of time it took to run the code
+			if floor(NowTime-firstTime) < 1
+				bigArray[i]=bigArray[i][1:convert(Int,ceil(NowTime-firstTime)):end]#we only save every nth term, where n is the amount of time it took to run the code
+			else
+				bigArray[i]=bigArray[i][1:convert(Int,floor(NowTime-firstTime)):end]
+			end
 		end
 		if numBodies == 3
 			#=I'm saving these in case we need them later
@@ -433,12 +437,12 @@ function Plot(file, color, fileSave=0, writeData=0, equal=0) #plotting L, E, or 
 	end
 end
 
-function AutomaticTester(fileSave)
+function AutomaticTester(fileSave,iI=1,iJ=-2,iK=1,iL=2)
 	file = "AutomaticTester.txt"
 	counter = 0
 	Masses = ["8,8,1","1.5,1.5,1","8,5,1","8,1.5,1"]
 	Eccentricities = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
-	for i in 1:4, j in -2:0.1:0, k in 1:11, l in 2:10
+	for i in iI:4, j in iJ:0.1:0, k in iK:11, l in iL:10
 		x = open("$file","w")
 		write(x,"$(Masses[i])\n")
 		write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n")
