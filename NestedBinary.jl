@@ -392,6 +392,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 		end
 	end
 	record = true
+	rowNumber = 0
 	if writeData == 0
 		XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
 			sheet = xf[1]
@@ -438,7 +439,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 				sheet["R$i"] = NowTime-firstTime
 				sheet["S$i"] = "[$(minimum(lList)),$(maximum(lList))]"
 				sheet["T$i"] = stability
-				sheet["U$i"] = i
+				sheet["U$i"] = rowNumber
 				if minimum(Elist)<-10.0^-3 || maximum(Elist)>10.0^-3
 					sheet["V$i"] = 0
 				else
@@ -447,7 +448,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 			end
 		end
 	end
-	return record #used for autotester
+	return record, rowNumber #used for autotester
 end
 
 function AutomaticTester(fileSave,iI=1,iJ=-2,iK=1,iL=2)
@@ -461,23 +462,12 @@ function AutomaticTester(fileSave,iI=1,iJ=-2,iK=1,iL=2)
 		write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n") 
 		write(x,"10,$hParam")
 		close(x)
-		rowNumber = getRow()
-		record = Plot(file, "none", "$fileSave"*"_$rowNumber"*".txt")
+		record, rowNumber = Plot(file, "none", "$fileSave"*"_0.txt")
 		rm(file)
+		mv("h≈(r÷v) data files/$fileSave"*"_0.txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt")
 		if record == false
-			rm("$fileSave"*"_$rowNumber"*".txt") #deletes text file if data wasn't recorded in spreadsheet
+			rm("h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt") #deletes text file if data wasn't recorded in spreadsheet
 		end
-	end
-end
-
-function getRow()
-	XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
-		sheet = xf[1]
-		m = 1
-		while typeof(sheet["A$m"]) != Missing #gets next blank row
-			m += 1
-		end
-		return m
 	end
 end
 
