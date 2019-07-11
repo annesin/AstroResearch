@@ -41,7 +41,7 @@ end
 Pfunction(file,XArray,mArray) = try
 	[parse.(Float64,split(readlines(file)[3],","))[1],true]
 catch
-	[(XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3]))*parse(Float64,split(readlines(file)[3],",")[1][1:end-1]),parse(Float64,split(readlines(file)[3],",")[1][1:end-1])] #number of periods
+	[sqrt((XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3])))*parse(Float64,split(readlines(file)[3],",")[1][1:end-1]),parse(Float64,split(readlines(file)[3],",")[1][1:end-1])] #number of periods
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
@@ -132,10 +132,15 @@ function System(file)
 		push!(x,X4,Y4,Z4,V₄)
 	end
 	#until the desired time has been reached, the code runs RK4
+
+	counter = 1
+
 	while t0 < t
 		#we will add an adaptive timestep later
+		if counter % 10000==0
+			println([t0/t])
+		end
 		x = RK4(f, x, m, h)
-
 		R₁ = [x[1],x[2],x[3]]
 		R₂ = [x[7],x[8],x[9]]
 		R₃ = [x[13],x[14],x[15]]
@@ -162,8 +167,8 @@ function System(file)
 		L₂ = cross(CM₁₂,(m[1]+m[2])*VINCM)+cross(R₃,m[3]*V₃) #momentum of outer Binary
 
 		t0 = t0 + h #advances time
-
-		h = hParam*(maximum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+		
+		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 		push!(Elist,E)
 		push!(Llist,L)
 		push!(E₁list,E₁)
@@ -186,6 +191,7 @@ function System(file)
 			push!(Y4,x[20])
 			push!(Z4,x[21])
 		end
+		counter += 1
 	end
 	if numBodies == 3
 		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,[],[],[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
@@ -226,7 +232,7 @@ function RK4(f,x,m,h)
 	return  x+(k1+2*k2+2*k3+k4)/6
 
 end 
-#!!change to filename, inclination
+
 """
 Takes a file with the data, then plots what you choose.
 
@@ -385,12 +391,11 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 			end
 		end
 	end
-	record = false
+	record = true
 	if writeData == 0
 		XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
 			sheet = xf[1]
 			i = 1
-			record = true
 			while typeof(sheet["A$i"]) != Missing #gets next blank row
 				if [sheet["A$i"],sheet["B$i"],sheet["C$i"],sheet["D$i"],sheet["E$i"],sheet["F$i"],sheet["G$i"],sheet["H$i"],sheet["I$i"],sheet["J$i"],sheet["K$i"]]==[m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],t0,hParam]
 					println("Not saving to spreadsheet: This data already has an entry at line $i.")
@@ -433,54 +438,46 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 				sheet["R$i"] = NowTime-firstTime
 				sheet["S$i"] = "[$(minimum(lList)),$(maximum(lList))]"
 				sheet["T$i"] = stability
+				sheet["U$i"] = i
+				if minimum(Elist)<-10.0^-3 || maximum(Elist)>10.0^-3
+					sheet["V$i"] = 0
+				else
+					sheet["V$i"] = 1
+				end
 			end
 		end
 	end
-	return record, minimum(Elist), maximum(Elist) #in order to check if this is a good simulation in the automatic tester
+	return record #used for autotester
 end
 
-function AutomaticTester(fileSave,precision,iI=1,iJ=-2,iK=1,iL=2)
+function AutomaticTester(fileSave,iI=1,iJ=-2,iK=1,iL=2)
 	file = "AutomaticTester.txt"
-	counter = 1
 	Masses = ["8,8,1","1.5,1.5,1","8,5,1","8,1.5,1"]
 	Eccentricities = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
-	for i in iI:4, j in iJ:0.1:0, k in iK:11, l in iL:10
-		hParam = 0.0001 #check and change this
-		continuing = false
-		smallCounter = 1
-		while continuing == false
-			x = open("$file","w")
-			write(x,"$(Masses[i])\n")
-			write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n")
-			write(x,"10,$hParam")
-			close(x)
-			XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
-				sheet = xf[1]
-				j = 1
-				while typeof(sheet["A$i"]) != Missing #gets next blank row
-					j += 1
-				end
-			end
-			rowNumber = j
-			recording, minE, maxE = Plot(file, "none", "$fileSave"*"_$rowNumber"*".txt")
-			if minE<-10.0^(-precision) || maxE>10.0^(-precision)
-				if smallCounter > 5 #failsafe
-					println("I'm breaking!")
-					continuing == true
-				else
-					println("Not precision enough, recalculating.")  #!!make sure to delete excel row
-					hParam *= 0.1
-					smallCounter+=1
-				end
-			else
-				continuing == true
-			end
-			rm(file)
-			if recording == false
-				rm("$fileSave"*"_$rowNumber"*".txt") #deletes .txt file if we're not recording it in the spreadsheet
-			end
+	for i in iI:4, j in 0:-0.1:iJ, k in iK:11, l in 10:-1:iL 
+		hParam = 0.01 #check and change this
+		x = open("$file","w")
+		write(x,"$(Masses[i])\n")
+		write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n") 
+		write(x,"10,$hParam")
+		close(x)
+		rowNumber = getRow()
+		record = Plot(file, "none", "$fileSave"*"_$rowNumber"*".txt")
+		rm(file)
+		if record == false
+			rm("$fileSave"*"_$rowNumber"*".txt") #deletes text file if data wasn't recorded in spreadsheet
 		end
-		counter+=1
+	end
+end
+
+function getRow()
+	XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
+		sheet = xf[1]
+		m = 1
+		while typeof(sheet["A$m"]) != Missing #gets next blank row
+			m += 1
+		end
+		return m
 	end
 end
 
