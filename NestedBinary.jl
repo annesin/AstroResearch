@@ -3,6 +3,9 @@ import LinearAlgebra.norm
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot
+Pkg.clone("https://github.com/timholy/ProgressMeter.jl.git")
+Pkg.add("ProgressMeter")
+using ProgressMeter
 Pkg.clone("https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add("XLSX")
 import XLSX
@@ -133,13 +136,10 @@ function System(file)
 	end
 	#until the desired time has been reached, the code runs RK4
 
-	counter = 1
-
+	prog = Progress(convert(Int,ceil(t)),0.5)
+	counter = 0
 	while t0 < t
 		#we will add an adaptive timestep later
-		if counter % 10000==0
-			println([t0/t])
-		end
 		x = RK4(f, x, m, h)
 		R₁ = [x[1],x[2],x[3]]
 		R₂ = [x[7],x[8],x[9]]
@@ -191,6 +191,9 @@ function System(file)
 			push!(Y4,x[20])
 			push!(Z4,x[21])
 		end
+		#if counter%10000==0
+			update!(prog,convert(Int64,floor(t0)))
+		#end
 		counter += 1
 	end
 	if numBodies == 3
@@ -202,7 +205,7 @@ function System(file)
 end
 
 function RK4(f,x,m,h)
-#Inputs are initial position array, mass array and step size h
+#Inputs are initial position arr=ay, mass array and step size h
 
     d=length(f)
 
@@ -251,6 +254,7 @@ equal is also optional. Plot() equalizes the axes of the trajectories by default
 function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
 	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file)
+	NowTime = time()
 	#=stability calculation=#
 	if E₁list[end]>0
 		stability = 0
@@ -274,7 +278,6 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 	L₁list = map(x -> (x-L10)/norm(L10),L₁list) #plotting ΔL, not L
 	L20 = L₂list[1]
 	L₂list = map(x -> (x-L20)/norm(L20),L₂list) #plotting ΔL, not L
-	NowTime = time()
 	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
 	println("The angular momentum varied by $(minimum(map(x -> norm(x),Llist))) to $(maximum(map(x -> norm(x),Llist))) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
 	println("This ran in $(NowTime-firstTime) seconds.")
