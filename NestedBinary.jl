@@ -460,7 +460,7 @@ function AutomaticTester(fileSave,iI=1,iJ=0,iK=1,iL=10)
 	Masses = ["8,8,1","1.5,1.5,1","8,5,1","8,1.5,1"]
 	Eccentricities = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
 	for i in iI:4, j in iJ:-0.1:-2, k in iK:11, l in iL:-1:2
-		hParam = 0.1 #even for worst case scenarios, it seems like this hParam will work. If not, we can just run it again.
+		hParam = 0.01 #even for worst case scenarios, it seems like this hParam will work. If not, we can just run it again.
 		x = open("$file","w")
 		write(x,"$(Masses[i])\n")
 		write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n") 
