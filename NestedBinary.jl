@@ -256,6 +256,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file)
 	NowTime = time()
 	#=stability calculation=#
+	println("\n")
 	if E₁list[end]>0
 		stability = 0
 		println("This is an unstable system.")
@@ -282,11 +283,11 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 	println("The angular momentum varied by $(minimum(map(x -> norm(x),Llist))) to $(maximum(map(x -> norm(x),Llist))) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
 	println("This ran in $(NowTime-firstTime) seconds.")
 	if color == "L"
-		   plt.plot(Tlist,map(x -> x[1],Llist),linestyle="solid",color="red")
-		   plt.plot(Tlist,map(x -> x[2],Llist),linestyle="solid",color="green")
-		   plt.plot(Tlist,map(x -> x[3],Llist),linestyle="solid",color="blue") #plotting change in individual components
+		plt.plot(Tlist,map(x -> x[1],Llist),linestyle="solid",color="red")
+		plt.plot(Tlist,map(x -> x[2],Llist),linestyle="solid",color="green")
+		plt.plot(Tlist,map(x -> x[3],Llist),linestyle="solid",color="blue") #plotting change in individual components
 	elseif color == "E"
-		   plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
+		plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
 	elseif color == "EL"
 		plt.plot(Tlist,map(x -> x[1],Llist),linestyle="solid",color="green")
 		plt.plot(Tlist,map(x -> x[2],Llist),linestyle="solid",color="blue") 
