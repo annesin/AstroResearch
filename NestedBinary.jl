@@ -469,7 +469,7 @@ function AutomaticTester(fileSave,iI=1,iJ=0,iK=1,iL=10)
 		println("The parameter here are [$(Masses[i])] masses, $(10^j) and $l seperations, and $(Eccentricities[k]) eccentricity.")
 		record, rowNumber = Plot(file, "none", "$fileSave"*"_0.txt")
 		rm(file)
-		mv("h≈(r÷v) data files/$fileSave"*"_0.txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt")
+		mv("h≈(r÷v) data files/$fileSave"*"_0.txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", true)
 		if record == false
 			rm("h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt") #deletes text file if data wasn't recorded in spreadsheet
 		end
