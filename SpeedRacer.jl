@@ -54,7 +54,7 @@ function Speed(fileSave,a=1,b=0,c=1,d=1)
     make_jobs(a,b,c,d)
     counter = sizeof(jobs)
     numCores = length(Sys.cpu_info())
-    println("Running with $numCores")
+    println("Running with $numCores cores...")
     for i in 1:numCores # start 12 tasks to process requests in parallel
         @async do_work(fileSave)
     end
