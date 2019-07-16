@@ -455,35 +455,6 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 	return record, rowNumber #used for autotester
 end
 
-"""
-This runs through a list of parameters to test, instead of just one.
-
-AutomaticTester(fileSave::String[, iI::Int64, iJ::Int64, iK::Int64, iL::Int64])
-
-fileSave is the name of the .txt files saved from the simulations, followed by their corresponding Excel row. For example, if fileSave = "AutoRun", and it saves in row 15, then the .txt file will be "AutoRun_15.txt".
-"""
-function AutomaticTester(fileSave,iI=1,iJ=0,iK=1,iL=10)
-	file = "AutomaticTester.txt"
-	Masses = ["8,8,1","1.5,1.5,1","8,5,1","8,1.5,1"]
-	Eccentricities = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
-	for i in iI:4, j in iJ:-0.1:-2, k in iK:11, l in iL:-1:2
-		hParam = 0.01 #even for worst case scenarios, it seems like this hParam will work. If not, we can just run it again.
-		x = open("$file","w")
-		write(x,"$(Masses[i])\n")
-		write(x,"$(10^j),$(Eccentricities[k]),$l,0,0,0\n") 
-		write(x,"100P,$hParam")
-		close(x)
-		println("The parameters here are [$(Masses[i])] masses, $(10^j) and $l seperations, and $(Eccentricities[k]) eccentricity.")
-		record, rowNumber = Plot(file, "none", "$fileSave"*"_0.txt")
-		rm(file)
-		if record
-			mv("h≈(r÷v) data files/$fileSave"*"_0.txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
-		else
-			rm("h≈(r÷v) data files/$fileSave"*"_0"*".txt")#deletes text file if data wasn't recorded in spreadsheet
-		end
-	end
-end
-
 function f0(x::Array{Float64,1}) #DE for Masses
 	return 0
 end
