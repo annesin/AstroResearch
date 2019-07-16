@@ -10,7 +10,7 @@ Eccentricities = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99]
 
 function do_work(fileSave)
     for job_id in jobs
-        hParam = 0.1
+        hParam = 0.01
         #job_id=fetch(jobs)
         println(job_id)
         x = open("Test_$job_id"*".txt","w")

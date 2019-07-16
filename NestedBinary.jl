@@ -455,6 +455,13 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 	return record, rowNumber #used for autotester
 end
 
+"""
+This runs through a list of parameters to test, instead of just one.
+
+AutomaticTester(fileSave::String[, iI::Int64, iJ::Int64, iK::Int64, iL::Int64])
+
+fileSave is the name of the .txt files saved from the simulations, followed by their corresponding Excel row. For example, if fileSave = "AutoRun", and it saves in row 15, then the .txt file will be "AutoRun_15.txt".
+"""
 function AutomaticTester(fileSave,iI=1,iJ=0,iK=1,iL=10)
 	file = "AutomaticTester.txt"
 	Masses = ["8,8,1","1.5,1.5,1","8,5,1","8,1.5,1"]
