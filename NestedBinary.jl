@@ -125,19 +125,57 @@ function System(file)
 	L₁list = [L₁]
 	L₂list = [L₂]
 	Tlist = [t0] #keeps track of time independent of timestep
+	Lmax = L
+	Lmin = L
+	Emax = E
+	Emin = E
 
 	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 
 	lList = [h] #testing length of timestep
+	lmax = h
+	lmin = h
+
+	#calculates inner binary period
+	Iperiod = sqrt(4*pi^2*A1/(1+e1)/G*(M1+M2))
 
 	x=vcat(X1,Y1,Z1,V₁,X2,Y2,Z2,V₂,X3,Y3,Z3,V₃)
 	if numBodies>3
 		push!(x,X4,Y4,Z4,V₄)
 	end
+	x1=x
 	#until the desired time has been reached, the code runs RK4
+	counter=0
+	#sees how many timesteps are in one inner binary orbital period
+	while t0 < Iperiod
+		#we will add an adaptive timestep later
+		x = RK4(f, x, m, h)
+		R₁ = [x[1],x[2],x[3]]
+		R₂ = [x[7],x[8],x[9]]
+		R₃ = [x[13],x[14],x[15]]
+		R₁₂ = R₁-R₂
+		R₁₃ = R₁-R₃
+		R₂₃ = R₂-R₃
+		CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
+		V₁ = [x[4],x[5],x[6]]
+		V₂ = [x[10],x[11],x[12]]
+		V₃ = [x[16],x[17],x[18]]
+		V₁₂ = V₁-V₂
+		V₁₃ = V₁-V₃
+		V₂₃ = V₂-V₃
+		VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
 
-	prog = Progress(convert(Int,ceil(t)),0.5)
+		t0 = t0 + h #advances time
+		
+		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+		counter += 1
+	end
+	println("The period of the inner binary is $(Iperiod), which takes $counter timesteps to simulate.")
+	stepSave=convert(Int64,round(counter/100))
+	t0=0
+	x=x1
 	counter = 0
+	prog = Progress(convert(Int,ceil(t)),0.5)
 	while t0 < t
 		#we will add an adaptive timestep later
 		x = RK4(f, x, m, h)
@@ -168,32 +206,32 @@ function System(file)
 
 		t0 = t0 + h #advances time
 		
-		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-		push!(Elist,E)
-		push!(Llist,L)
-		push!(E₁list,E₁)
-		push!(E₂list,E₂)
-		push!(L₁list,L₁)
-		push!(L₂list,L₂)
-	   	push!(lList,h)
-		push!(Tlist,t0)
-		push!(X1,x[1])
-		push!(X2,x[7])
-		push!(X3,x[13])
-		push!(Y1,x[2]) 
-		push!(Y2,x[8])
-		push!(Y3,x[14])
-		push!(Z1,x[3])
-		push!(Z2,x[9])
-		push!(Z3,x[15])
-		if numBodies == 4
-			push!(X4,x[19])
-			push!(Y4,x[20])
-			push!(Z4,x[21])
+		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin
+			push!(Elist,E)
+			push!(Llist,L)
+			push!(E₁list,E₁)
+			push!(E₂list,E₂)
+			push!(L₁list,L₁)
+			push!(L₂list,L₂)
+			push!(lList,h)
+			push!(Tlist,t0)
+			push!(X1,x[1])
+			push!(X2,x[7])
+			push!(X3,x[13])
+			push!(Y1,x[2]) 
+			push!(Y2,x[8])
+			push!(Y3,x[14])
+			push!(Z1,x[3])
+			push!(Z2,x[9])
+			push!(Z3,x[15])
+			if numBodies == 4
+				push!(X4,x[19])
+				push!(Y4,x[20])
+				push!(Z4,x[21])
+			end
 		end
-		#if counter%10000==0
-			update!(prog,convert(Int64,floor(t0)))
-		#end
+		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+		update!(prog,convert(Int64,floor(t0)))
 		counter += 1
 	end
 	if numBodies == 3
@@ -365,11 +403,6 @@ function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L,
 				push!(tracker,5) #if there is, we store a 5
 			else
 				push!(tracker,2) #if there isn't, we store a 2
-			end
-			if floor(NowTime-firstTime) < 1
-				bigArray[i]=bigArray[i][1:convert(Int,ceil(NowTime-firstTime)):end]#we only save every nth term, where n is the amount of time it took to run the code
-			else
-				bigArray[i]=bigArray[i][1:convert(Int,floor(NowTime-firstTime)):end]
 			end
 		end
 		if numBodies == 3
