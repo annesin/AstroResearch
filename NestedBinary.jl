@@ -48,7 +48,7 @@ catch
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
-function System(file)
+function System(file, MemorySave=true)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, numBodies, periods = fileInput(file) #gets info from file
 
@@ -147,34 +147,36 @@ function System(file)
 	#until the desired time has been reached, the code runs RK4
 	counter=0
 	#sees how many timesteps are in one inner binary orbital period
-	while t0 < Iperiod
-		#we will add an adaptive timestep later
-		x = RK4(f, x, m, h)
-		R₁ = [x[1],x[2],x[3]]
-		R₂ = [x[7],x[8],x[9]]
-		R₃ = [x[13],x[14],x[15]]
-		R₁₂ = R₁-R₂
-		R₁₃ = R₁-R₃
-		R₂₃ = R₂-R₃
-		CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
-		V₁ = [x[4],x[5],x[6]]
-		V₂ = [x[10],x[11],x[12]]
-		V₃ = [x[16],x[17],x[18]]
-		V₁₂ = V₁-V₂
-		V₁₃ = V₁-V₃
-		V₂₃ = V₂-V₃
-		VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
+	if MemorySave
+		while t0 < Iperiod
+			#we will add an adaptive timestep later
+			x = RK4(f, x, m, h)
+			R₁ = [x[1],x[2],x[3]]
+			R₂ = [x[7],x[8],x[9]]
+			R₃ = [x[13],x[14],x[15]]
+			R₁₂ = R₁-R₂
+			R₁₃ = R₁-R₃
+			R₂₃ = R₂-R₃
+			CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
+			V₁ = [x[4],x[5],x[6]]
+			V₂ = [x[10],x[11],x[12]]
+			V₃ = [x[16],x[17],x[18]]
+			V₁₂ = V₁-V₂
+			V₁₃ = V₁-V₃
+			V₂₃ = V₂-V₃
+			VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
 
-		t0 = t0 + h #advances time
-		
-		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-		counter += 1
+			t0 = t0 + h #advances time
+			
+			h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+			counter += 1
+		end
+		stepSave=convert(Int64,round(counter/100))
+		println("The period of the inner binary is $(Iperiod), which takes $counter timesteps to simulate, so we'll save every $(stepSave)th timestep.")
+		t0=0
+		x=x1
+		counter = 0
 	end
-	println("The period of the inner binary is $(Iperiod), which takes $counter timesteps to simulate.")
-	stepSave=convert(Int64,round(counter/100))
-	t0=0
-	x=x1
-	counter = 0
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	while t0 < t
 		#we will add an adaptive timestep later
@@ -206,7 +208,7 @@ function System(file)
 
 		t0 = t0 + h #advances time
 		
-		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin
+		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin || MemorySave == false
 			push!(Elist,E)
 			push!(Llist,L)
 			push!(E₁list,E₁)
@@ -289,9 +291,9 @@ fileSave is optional. However, if a string is entered, for example, "Sample.txt"
 
 equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
 """
-function Plot(file, color="none", fileSave=0, writeData=0, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file)
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file, MemorySave)
 	NowTime = time()
 	#=stability calculation=#
 	println("\n")
