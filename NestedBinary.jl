@@ -253,7 +253,7 @@ function System(file, MemorySave=true)
 	else 
 		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
-	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods #need initial velocities to write filename for saving
+	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, counter #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -305,7 +305,7 @@ equal is also optional. Plot() equalizes the axes of the trajectories by default
 """
 function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods = System(file, MemorySave)
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, MemorySave)
 	NowTime = time()
 	#=stability calculation=#
 	println("\n")
@@ -334,6 +334,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equa
 	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
 	println("The angular momentum varied by $(minimum(map(x -> norm(x),Llist))) to $(maximum(map(x -> norm(x),Llist))) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
 	println("This ran in $(NowTime-firstTime) seconds.")
+	println("This took $timesteps timesteps to simulate.")
 	if color == "L"
 		plt.plot(Tlist,map(x -> x[1],Llist),linestyle="solid",color="red")
 		plt.plot(Tlist,map(x -> x[2],Llist),linestyle="solid",color="green")
@@ -496,6 +497,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equa
 				else
 					sheet["V$i"] = 1
 				end
+				sheet["W$i"] = timesteps
 			end
 		end
 	end
