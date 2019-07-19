@@ -9,29 +9,29 @@ using ProgressMeter
 Pkg.clone("https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add("XLSX")
 import XLSX
-#!!look at how julia runs with multiple cores
+
 G = 2945.49 #gravitational constant
 
 "Inputs a file and retrieves the necessary information from the file. This includes the masses of the bodies and their initial conditions."
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
-#= This function inputs a .txt file and extracts data from it to get the inputs needed for SystemRK =#
+#= This function inputs a .txt file and extracts data from it to get the inputs needed for NestedBinary =#
 	fArray = [] #we need differential functions to calculate new positions and velocities with each timestep. These functions will be stored in this array. What functions are entered depends on how many bodies we are working with.
 
 	mArray = parse.(Float64,split(readlines(file)[1],",")) #this inputs the masses of the bodies
-	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial positions and velocities of the bodies
+	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial conditions of the bodies
 
-	if length(XArray)%6 != 0 #this makes sure that each body has 6 entries: a position and velocity in the x, y, and z direction.
-		error("Invalid input: not enough positions and velocities for given number of masses.")
+	if length(XArray) != 6 #this makes sure that each body has 6 entries: a position and velocity in the x, y, and z direction.
+		error("Invalid input: wrong number of initial conditions; go back and check the input.")
 	end
 
-	numBodies = (length(XArray)/3)+1 #this is different than the number of masses, because the test particle counts as a massless body here
+	numBodies = (length(XArray)/6)+2 #this is different than the number of masses, because the test particle counts as a massless body here
 
 	if numBodies == 3 #so, here, we either have three massive bodies or two massive bodies with a test particle
 		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C) #these are the functions we need for that
 		if length(mArray) == 2 #test particle with 2 numBodies
 			push!(mArray,0) #including the test particle as a third body with zero mass
 		end
-	elseif numBodies == 4 #Main.jl cannot handle four massive bodies, so presumably, this is three massive bodies with a test particle
+	elseif numBodies == 4 #NestedBinary.jl cannot handle four massive bodies, so presumably, this is three massive bodies with a test particle
 		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C, f1D, f2D, f3D, f4D, f5D, f6D) #these are the functions we need
 	else
 		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. 
@@ -88,9 +88,9 @@ function System(file, MemorySave=true)
 	R₁₂ = R₁-R₂
 	R₁₃ = R₁-R₃
 	R₂₃ = R₂-R₃
-	velocityM3 = sqrt(G*(M1+M2)^2*(1-e2)/(A2*M))
+	velocityM3 = sqrt(G*(M1+M2)^2*(1-e2)/(A2*M)) 
 	velocityM1M2 = sqrt((G*(M3^2)*(1-e2))/(A2*M)) #velocity of inner CM
-	V₁ = [velocityM1M2*sind(Θ), -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ),0.0]
+	V₁ = [-velocityM1M2*sind(Θ), -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ),0.0]
 	V₂ = [-velocityM1M2*sind(Θ), sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ),0.0]
 	V₃ = [velocityM3*sind(Θ), velocityM3*cosd(Θ),0.0]
 	if numBodies>3
@@ -100,15 +100,11 @@ function System(file, MemorySave=true)
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
-	VCM = (M1*V₁+M2*V₂+M3*V₃)/M
-	V₁ -= VCM
-	V₂ -= VCM
-	V₃ -= VCM
 	VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2]) #velocity of inner center of mass
 
 	K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
-	U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
-	E = K - U #total energy
+	U = -(G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃)) #total gravitational potential energy
+	E = K + U #total energy 
 	L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 
 	E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
@@ -132,7 +128,7 @@ function System(file, MemorySave=true)
 
 	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 
-	lList = [h] #testing length of timestep
+	lList = [h] #recording length of timestep
 	lmax = h
 	lmin = h
 
@@ -149,7 +145,6 @@ function System(file, MemorySave=true)
 	#sees how many timesteps are in one inner binary orbital period
 	if MemorySave
 		while t0 < Iperiod
-			#we will add an adaptive timestep later
 			x = RK4(f, x, m, h)
 			R₁ = [x[1],x[2],x[3]]
 			R₂ = [x[7],x[8],x[9]]
@@ -157,14 +152,12 @@ function System(file, MemorySave=true)
 			R₁₂ = R₁-R₂
 			R₁₃ = R₁-R₃
 			R₂₃ = R₂-R₃
-			CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
 			V₁ = [x[4],x[5],x[6]]
 			V₂ = [x[10],x[11],x[12]]
 			V₃ = [x[16],x[17],x[18]]
 			V₁₂ = V₁-V₂
 			V₁₃ = V₁-V₃
 			V₂₃ = V₂-V₃
-			VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
 
 			t0 = t0 + h #advances time
 			
@@ -176,7 +169,9 @@ function System(file, MemorySave=true)
 		t0=0
 		x=x1
 		counter = 0
-	end
+	else
+		stepSave = 1
+	end 
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	while t0 < t
 		#we will add an adaptive timestep later
@@ -197,8 +192,8 @@ function System(file, MemorySave=true)
 		VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
 
 		K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
-		U = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
-		E = K - U #total energy
+		U = -(G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃)) #total gravitational potential energy
+		E = K + U #total energy
 		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
 		
 		E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
@@ -208,7 +203,7 @@ function System(file, MemorySave=true)
 
 		t0 = t0 + h #advances time
 		
-		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin || MemorySave == false
+		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin 
 			push!(Elist,E)
 			push!(Llist,L)
 			push!(E₁list,E₁)
@@ -231,9 +226,26 @@ function System(file, MemorySave=true)
 				push!(Y4,x[20])
 				push!(Z4,x[21])
 			end
+			if L > Lmax
+				Lmax = L
+			elseif L < Lmin
+				Lmin = L
+			end
+			if E > Emax
+				Emax = E
+			elseif E < Emin
+				Emin = E
+			end
+			if h > lmax
+				lmax = h
+			elseif h < lmin
+				lmin = h
+			end
 		end
 		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-		update!(prog,convert(Int64,floor(t0)))
+		if counter % 10000 == 0
+			update!(prog,convert(Int64,floor(t0)))
+		end
 		counter += 1
 	end
 	if numBodies == 3
@@ -437,7 +449,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equa
 			sheet = xf[1]
 			i = 1
 			while typeof(sheet["A$i"]) != Missing #gets next blank row
-				if [sheet["A$i"],sheet["B$i"],sheet["C$i"],sheet["D$i"],sheet["E$i"],sheet["F$i"],sheet["G$i"],sheet["H$i"],sheet["I$i"],sheet["J$i"],sheet["K$i"]]==[m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],t0,hParam]
+				if [sheet["A$i"],sheet["B$i"],sheet["C$i"],sheet["D$i"],sheet["E$i"],sheet["F$i"],sheet["G$i"],sheet["H$i"],sheet["I$i"],sheet["J$i"],sheet["K$i"]] == [m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],t0,hParam] || [sheet["A$i"],sheet["B$i"],sheet["C$i"],sheet["D$i"],sheet["E$i"],sheet["F$i"],sheet["G$i"],sheet["H$i"],sheet["I$i"],sheet["J$i"],sheet["K$i"]] == [m[1],m[2],m[3],OriginalX[1],OriginalX[2],OriginalX[3],OriginalX[4],OriginalX[5],OriginalX[6],"$periods periods",hParam]
 					println("Not saving to spreadsheet: This data already has an entry at line $i.")
 					record = false
 				end
