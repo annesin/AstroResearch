@@ -36,15 +36,17 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 	else
 		error("Check how many bodies you have. Number of position vectors are $numBodies while number of masses are $(length(mArray)).") #if we only have two bodies, then we run systemrk.jl, so not this. 
 	end
-	t, notPeriods = Pfunction(file,XArray,mArray)
+	Parse = split(readlines(file)[3],",")
+	if Parse[1][end] == "P"[1]
+		t = sqrt((XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3])))*parse(Float64,Parse[1][1:end-1])
+		notPeriods = Parse[1]
+	else
+		t = parse(Float64,Parse[1])
+		notPeriods = true
+	end
+	println(t, notPeriods)
 	hParam = parse.(Float64,split(readlines(file)[3],",")[2]) #these should be the elements of the third line of the .txt file
 	return fArray, XArray, mArray, t, hParam, numBodies, notPeriods
-end
-
-Pfunction(file,XArray,mArray) = try
-	[parse.(Float64,split(readlines(file)[3],","))[1],true]
-catch
-	[sqrt((XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3])))*parse(Float64,split(readlines(file)[3],",")[1][1:end-1]),parse(Float64,split(readlines(file)[3],",")[1][1:end-1])] #number of periods
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
