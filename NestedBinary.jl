@@ -44,7 +44,6 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 		t = parse(Float64,Parse[1])
 		notPeriods = true
 	end
-	println(t, notPeriods)
 	hParam = parse.(Float64,split(readlines(file)[3],",")[2]) #these should be the elements of the third line of the .txt file
 	return fArray, XArray, mArray, t, hParam, numBodies, notPeriods
 end
