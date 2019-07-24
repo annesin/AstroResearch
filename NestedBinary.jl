@@ -10,13 +10,14 @@ Pkg.clone("https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add("XLSX")
 import XLSX
 
-G = 2945.49 #gravitational constant
+#G = 2945.49 gravitational constant, this is no longer a global variable since it takes up too much room in memory somehow :(
 
 "Inputs a file and retrieves the necessary information from the file. This includes the masses of the bodies and their initial conditions."
-function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
+function fileInput(file, G) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for NestedBinary =#
-	fArray = [] #we need differential functions to calculate new positions and velocities with each timestep. These functions will be stored in this array. What functions are entered depends on how many bodies we are working with.
-
+	fArray = Function[] #we need differential functions to calculate new positions and velocities with each timestep. These functions will be stored in this array. What functions are entered depends on how many bodies we are working with.
+	#println(fArray)
+	#!!make this array a defined type!! Along with the other arrays
 	mArray = parse.(Float64,split(readlines(file)[1],",")) #this inputs the masses of the bodies
 	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial conditions of the bodies
 
@@ -49,9 +50,9 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
-function System(file, MemorySave=true)
+function System(file, G, MemorySave=true)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
-	f, x, m, t, hParam, numBodies, periods = fileInput(file) #gets info from file
+	f, x, m, t, hParam, numBodies, periods = fileInput(file, G) #gets info from file
 
 	OriginalX = x
 
@@ -146,7 +147,7 @@ function System(file, MemorySave=true)
 	#sees how many timesteps are in one inner binary orbital period
 	if MemorySave
 		while t0 < Iperiod
-			x = RK4(f, x, m, h)
+			x = RK4(f, x, m, h, G)
 			R₁ = [x[1],x[2],x[3]]
 			R₂ = [x[7],x[8],x[9]]
 			R₃ = [x[13],x[14],x[15]]
@@ -176,35 +177,32 @@ function System(file, MemorySave=true)
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	while t0 < t
 		#we will add an adaptive timestep later
-		x = RK4(f, x, m, h)
+		x = RK4(f, x, m, h, G)
 		R₁ = [x[1],x[2],x[3]]
 		R₂ = [x[7],x[8],x[9]]
 		R₃ = [x[13],x[14],x[15]]
 		R₁₂ = R₁-R₂
 		R₁₃ = R₁-R₃
 		R₂₃ = R₂-R₃
-		CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2)
 		V₁ = [x[4],x[5],x[6]]
 		V₂ = [x[10],x[11],x[12]]
 		V₃ = [x[16],x[17],x[18]]
-		V₁₂ = V₁-V₂
-		V₁₃ = V₁-V₃
-		V₂₃ = V₂-V₃
-		VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
 
 		K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
 		U = -(G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃)) #total gravitational potential energy
 		E = K + U #total energy
 		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
-		
-		E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
-		E₂ = .5*(m[1]+m[2])*norm(VINCM)^2+.5*m[3]*norm(V₃)^2 - G*(m[1]+m[2])*m[3]/norm(R₃-CM₁₂)#Energy of outer binary
-		L₁ = cross(R₁-CM₁₂,m[1]*(V₁-VINCM))+cross(R₂-CM₁₂,m[2]*(V₂-VINCM)) #momentum of inner binary
-		L₂ = cross(CM₁₂,(m[1]+m[2])*VINCM)+cross(R₃,m[3]*V₃) #momentum of outer Binary
-
+		V₁₂ = V₁-V₂
+		V₁₃ = V₁-V₃
+		V₂₃ = V₂-V₃
 		t0 = t0 + h #advances time
-		
-		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin 
+		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin
+			VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
+			CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2) 
+			E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
+			E₂ = .5*(m[1]+m[2])*norm(VINCM)^2+.5*m[3]*norm(V₃)^2 - G*(m[1]+m[2])*m[3]/norm(R₃-CM₁₂)#Energy of outer binary
+			L₁ = cross(R₁-CM₁₂,m[1]*(V₁-VINCM))+cross(R₂-CM₁₂,m[2]*(V₂-VINCM)) #momentum of inner binary
+			L₂ = cross(CM₁₂,(m[1]+m[2])*VINCM)+cross(R₃,m[3]*V₃) #momentum of outer Binary
 			push!(Elist,E)
 			push!(Llist,L)
 			push!(E₁list,E₁)
@@ -242,23 +240,45 @@ function System(file, MemorySave=true)
 			elseif h < lmin
 				lmin = h
 			end
+			VINCM = nothing
+			CM₁₂ = nothing
+			E₁ = nothing
+			E₂ = nothing
+			L₁ = nothing
+			L₂ = nothing
 		end
 		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 		if counter % 10000 == 0
 			update!(prog,convert(Int64,floor(t0)))
 		end
 		counter += 1
+		R₁ = nothing
+		R₂ = nothing
+		R₃ = nothing
+		R₁₂ = nothing
+		R₁₃ = nothing
+		R₂₃ = nothing
+		V₁ = nothing
+		V₂ = nothing
+		V₃ = nothing
+		K = nothing
+		U = nothing
+		E = nothing
+		L = nothing
+		V₁₂ = nothing
+		V₁₃ = nothing
+		V₂₃ = nothing
 	end
 	if numBodies == 3
-		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,[],[],[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
+		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,Float64[],Float64[],Float64[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
 	else 
 		v4x, v4y, v4z = [x[22],x[23],x[24]]
 	end
 	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, counter #need initial velocities to write filename for saving
 end
 
-function RK4(f,x,m,h)
-#Inputs are initial position arr=ay, mass array and step size h
+function RK4(f,x,m,h,G)
+#Inputs are initial position array, mass array and step size h
 
     d=length(f)
 
@@ -272,20 +292,22 @@ function RK4(f,x,m,h)
 #calculating the runge kutta parameters for every function in f
 
 	for i in 1:d
-		k1[i]=h*f[i](x, m)
+		k1[i]=h*f[i](x, m, G)
 	end
 	for i in 1:d
-		k2[i]=h*f[i](x+k1/2, m)
+		k2[i]=h*f[i](x+k1/2, m, G)
 	end
 	for i in 1:d
-		k3[i]=h*f[i](x+k2/2, m)
+		k3[i]=h*f[i](x+k2/2, m, G)
 	end
 	for i in 1:d
-		k4[i]=h*f[i](x+k3, m)
+		k4[i]=h*f[i](x+k3, m, G)
 	end
 
 #returns the desired step
-	return  x+(k1+2*k2+2*k3+k4)/6
+	y=x+(k1+2*k2+2*k3+k4)/6
+	x=nothing
+	return y
 
 end 
 
@@ -304,9 +326,9 @@ fileSave is optional. However, if a string is entered, for example, "Sample.txt"
 
 equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
 """
-function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equal=0, G=2945.49) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, MemorySave)
+	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, G, MemorySave)
 	NowTime = time()
 	#=stability calculation=#
 	println("\n")
@@ -411,7 +433,7 @@ function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equa
 			push!(bigArray,X4,Y4,Z4)
 		end
 		push!(bigArray,L₁list,L₂list,[NowTime-firstTime],E₁list,E₂list)
-		tracker = [] #this will store a data point for each 1D array
+		tracker = Int64[] #this will store a data point for each 1D array
 		for i in 1:length(bigArray)
 			if occursin("Array{Float64,1}","$(bigArray[i])")
 				push!(tracker,18)
@@ -505,59 +527,59 @@ function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equa
 	return record, rowNumber #used for autotester
 end
 
-function f0(x::Array{Float64,1}) #DE for Masses
+function f0(x::Array{Float64,1},G) #DE for Masses
 	return 0
 end
 
-function f1A(x::Array{Float64,1}, m::Array{Float64,1}) #x1
+function f1A(x::Array{Float64,1}, m::Array{Float64,1},G) #x1
 	return x[4]
 end
 
-function f1B(x::Array{Float64,1}, m::Array{Float64,1}) #x2
+function f1B(x::Array{Float64,1}, m::Array{Float64,1},G) #x2
 	return x[10]
 end
 
-function f1C(x::Array{Float64,1}, m::Array{Float64,1}) #x3
+function f1C(x::Array{Float64,1}, m::Array{Float64,1},G) #x3
 	return x[16]
 end
 
-function f1D(x::Array{Float64,1}, m::Array{Float64,1}) #x4(TestParticle)
+function f1D(x::Array{Float64,1}, m::Array{Float64,1},G) #x4(TestParticle)
 	return x[22]
 end
 
-function f2A(x::Array{Float64,1}, m::Array{Float64,1}) #y1
+function f2A(x::Array{Float64,1}, m::Array{Float64,1},G) #y1
 	return x[5]
 end
 
-function f2B(x::Array{Float64,1}, m::Array{Float64,1}) #y2
+function f2B(x::Array{Float64,1}, m::Array{Float64,1},G) #y2
 	return x[11]
 end
 
-function f2C(x::Array{Float64,1}, m::Array{Float64,1}) #y3
+function f2C(x::Array{Float64,1}, m::Array{Float64,1},G) #y3
 	return x[17]
 end
 
-function f2D(x::Array{Float64,1}, m::Array{Float64,1}) #y4(TestParticle)
+function f2D(x::Array{Float64,1}, m::Array{Float64,1},G) #y4(TestParticle)
 	return x[23]
 end	
 
-function f3A(x::Array{Float64,1}, m::Array{Float64,1}) #z1
+function f3A(x::Array{Float64,1}, m::Array{Float64,1},G) #z1
 	return x[6]
 end
 
-function f3B(x::Array{Float64,1}, m::Array{Float64,1}) #z2
+function f3B(x::Array{Float64,1}, m::Array{Float64,1},G) #z2
 	return x[12]
 end
 
-function f3C(x::Array{Float64,1}, m::Array{Float64,1}) #z3
+function f3C(x::Array{Float64,1}, m::Array{Float64,1},G) #z3
 	return x[18]
 end
 
-function f3D(x::Array{Float64,1}, m::Array{Float64,1}) #z4(TestParticle)
+function f3D(x::Array{Float64,1}, m::Array{Float64,1},G) #z4(TestParticle)
 	return x[24]
 end
 
-function f4A(x::Array{Float64,1}, m::Array{Float64,1}) #v1
+function f4A(x::Array{Float64,1}, m::Array{Float64,1},G) #v1
 	g1 = G * m[2] * (x[7] - x[1])
 	g2 = G * m[3] * (x[13] - x[1])
 	r1 = ((x[1] - x[7])^2 + (x[2] - x[8])^2 + (x[3] - x[9])^2)^0.5
@@ -565,7 +587,7 @@ function f4A(x::Array{Float64,1}, m::Array{Float64,1}) #v1
 	return g1/(r1^3) + g2/(r2^3)
 end
 
-function f4B(x::Array{Float64,1}, m::Array{Float64,1}) #v2
+function f4B(x::Array{Float64,1}, m::Array{Float64,1},G) #v2
 	g1 = G * m[1] * (x[1] - x[7])
 	g2 = G * m[3] * (x[13] - x[7])
 	r1 = ((x[1] - x[7])^2 + (x[2] - x[8])^2 + (x[3] - x[9])^2)^0.5
@@ -573,7 +595,7 @@ function f4B(x::Array{Float64,1}, m::Array{Float64,1}) #v2
 	return g1/(r1^3) + g2/(r3^3)
 end
 
-function f4C(x::Array{Float64,1}, m::Array{Float64,1}) #v3
+function f4C(x::Array{Float64,1}, m::Array{Float64,1},G) #v3
 	g1 = G * m[1] * (x[1] - x[13])
 	g2 = G * m[2] * (x[7] - x[13])
 	r2 = ((x[1] - x[13])^2 + (x[2] - x[14])^2 +(x[3] - x[15])^2)^0.5
@@ -581,7 +603,7 @@ function f4C(x::Array{Float64,1}, m::Array{Float64,1}) #v3
 	return g1/(r2^3) + g2/(r3^3)
 end
 
-function f4D(x::Array{Float64,1}, m::Array{Float64,1}) #v4
+function f4D(x::Array{Float64,1}, m::Array{Float64,1},G) #v4
 	g1 = G * m[1] * (x[1] - x[19])
 	g2 = G * m[2] * (x[7] - x[19])
 	g3 = G * m[3] * (x[13] - x[19])
@@ -591,7 +613,7 @@ function f4D(x::Array{Float64,1}, m::Array{Float64,1}) #v4
 	return g1/(r1^3) + g2/(r2^3) + g3/(r3^3)
 end
 	
-function f5A(x::Array{Float64,1}, m::Array{Float64,1}) #w1
+function f5A(x::Array{Float64,1}, m::Array{Float64,1},G) #w1
 	g1 = G * m[2] * (x[8] - x[2])
 	g2 = G * m[3] * (x[14] - x[2])
 	r1 = ((x[1] - x[7])^2 + (x[2] - x[8])^2 + (x[3] - x[9])^2)^0.5
@@ -599,7 +621,7 @@ function f5A(x::Array{Float64,1}, m::Array{Float64,1}) #w1
 	return g1/(r1^3) + g2/(r2^3)
 end
 
-function f5B(x::Array{Float64,1}, m::Array{Float64,1}) #w2
+function f5B(x::Array{Float64,1}, m::Array{Float64,1},G) #w2
 	g1 = G * m[1] * (x[2] - x[8])
 	g2 = G * m[3] * (x[14] - x[8])
 	r1 = ((x[1] - x[7])^2 + (x[2] - x[8])^2 + (x[3] - x[9])^2)^0.5
@@ -607,7 +629,7 @@ function f5B(x::Array{Float64,1}, m::Array{Float64,1}) #w2
 	return g1/(r1^3) + g2/(r3^3)
 end
 
-function f5C(x::Array{Float64,1}, m::Array{Float64,1}) #w3
+function f5C(x::Array{Float64,1}, m::Array{Float64,1},G) #w3
 	g1 = G * m[1] * (x[2] - x[14])
 	g2 = G * m[2] * (x[8] - x[14])
 	r2 = ((x[1] - x[13])^2 + (x[2] - x[14])^2 +(x[3] - x[15])^2)^0.5
@@ -615,7 +637,7 @@ function f5C(x::Array{Float64,1}, m::Array{Float64,1}) #w3
 	return g1/(r2^3) + g2/(r3^3)
 end
 
-function f5D(x::Array{Float64,1}, m::Array{Float64,1}) #w4
+function f5D(x::Array{Float64,1}, m::Array{Float64,1},G) #w4
 	g1 = G * m[1] * (x[2] - x[20])
 	g2 = G * m[2] * (x[8] - x[20])
 	g3 = G * m[3] * (x[14] - x[20])
@@ -625,7 +647,7 @@ function f5D(x::Array{Float64,1}, m::Array{Float64,1}) #w4
 	return g1/(r1^3) + g2/(r2^3) + g3/(r3^3)
 end
 
-function f6A(x::Array{Float64,1}, m::Array{Float64,1}) #u1
+function f6A(x::Array{Float64,1}, m::Array{Float64,1},G) #u1
 	g1 = G * m[2] * (x[9] - x[3])
 	g2 = G * m[3] * (x[15] - x[3])
 	r1 = ((x[1] - x[7])^2 + (x[2] - x[8])^2 + (x[3] - x[9])^2)^0.5
@@ -633,7 +655,7 @@ function f6A(x::Array{Float64,1}, m::Array{Float64,1}) #u1
 	return g1/(r1^3) + g2/(r2^3)
 end
 
-function f6B(x::Array{Float64,1}, m::Array{Float64,1}) #u2
+function f6B(x::Array{Float64,1}, m::Array{Float64,1},G) #u2
 	g1 = G * m[1] * (x[3] - x[9])
 	g2 = G * m[3] * (x[15] - x[9])
 	r1 = ((x[1] - x[7])^2 + (x[2] - x[8])^2 + (x[3] - x[9])^2)^0.5
@@ -641,7 +663,7 @@ function f6B(x::Array{Float64,1}, m::Array{Float64,1}) #u2
 	return g1/(r1^3) + g2/(r3^3)
 end
 
-function f6C(x::Array{Float64,1}, m::Array{Float64,1}) #u3
+function f6C(x::Array{Float64,1}, m::Array{Float64,1},G) #u3
 	g1 = G * m[1] * (x[3] - x[15])
 	g2 = G * m[2] * (x[9] - x[15])
 	r2 = ((x[1] - x[13])^2 + (x[2] - x[14])^2 +(x[3] - x[15])^2)^0.5
@@ -649,7 +671,7 @@ function f6C(x::Array{Float64,1}, m::Array{Float64,1}) #u3
 	return g1/(r2^3) + g2/(r3^3)
 end
 
-function f6D(x::Array{Float64,1}, m::Array{Float64,1}) #w4
+function f6D(x::Array{Float64,1}, m::Array{Float64,1},G) #w4
 	g1 = G * m[1] * (x[3] - x[21])
 	g2 = G * m[2] * (x[9] - x[21])
 	g3 = G * m[3] * (x[15] - x[21])
