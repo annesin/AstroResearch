@@ -53,14 +53,13 @@ function make_jobs(a=1,b=0,c=1,d=1)
         end
     end
 end
-#!! bring back scatter plots
+
 #the master function
 function Speed(fileSave,a=1,b=0,c=1,d=1)
     make_jobs(a,b,c,d) #loops through and makes jobs from the parameter space we give it
-    #numCores = length(Sys.cpu_info()) #this isn't really the number of cores, but the number of parallel processes avaliable. It varies by machine.
-    numCores = 1
+    numCores = length(Sys.cpu_info()) #this isn't really the number of cores, but the number of parallel processes avaliable. It varies by machine.
     println("Running with $numCores cores...")
-    for i in 1:1 # start n tasks to process requests in parallel
+    for i in 1:numCores # start n tasks to process requests in parallel
         @async do_work(fileSave) #In parallel, runs simulations
     end
 end
