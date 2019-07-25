@@ -10,7 +10,7 @@ Pkg.clone("https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add("XLSX")
 import XLSX
 #!!look at how julia runs with multiple cores
-G = 2945.49 #gravitational constant
+const G = 2945.49 #gravitational constant
 
 "Inputs a file and retrieves the necessary information from the file. This includes the masses of the bodies and their initial conditions."
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
