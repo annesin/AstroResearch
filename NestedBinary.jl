@@ -50,7 +50,7 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
-function System(file, MemorySave=true)
+function System(file, fileSave, MemorySave=true)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, numBodies, periods = fileInput(file) #gets info from file
 
@@ -175,106 +175,95 @@ function System(file, MemorySave=true)
 		stepSave = 1
 	end 
 	prog = Progress(convert(Int,ceil(t)),0.5)
-	while t0 < t
-		#we will add an adaptive timestep later
-		x = RK4(f, x, m, h)
-		R₁ = [x[1],x[2],x[3]]
-		R₂ = [x[7],x[8],x[9]]
-		R₃ = [x[13],x[14],x[15]]
-		R₁₂ = R₁-R₂
-		R₁₃ = R₁-R₃
-		R₂₃ = R₂-R₃
-		V₁ = [x[4],x[5],x[6]]
-		V₂ = [x[10],x[11],x[12]]
-		V₃ = [x[16],x[17],x[18]]
+	delete = false
+	if fileSave != 0
+		fileSave == "AutoSave.txt"
+		delete = true
+	end
+	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
+		write(datafile,"$numBodies","\n")
+		while t0 < t
+			#we will add an adaptive timestep later
+			x = RK4(f, x, m, h)
+			R₁ = [x[1],x[2],x[3]]
+			R₂ = [x[7],x[8],x[9]]
+			R₃ = [x[13],x[14],x[15]]
+			R₁₂ = R₁-R₂
+			R₁₃ = R₁-R₃
+			R₂₃ = R₂-R₃
+			V₁ = [x[4],x[5],x[6]]
+			V₂ = [x[10],x[11],x[12]]
+			V₃ = [x[16],x[17],x[18]]
 
-		K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
-		U = -(G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃)) #total gravitational potential energy
-		E = K + U #total energy
-		L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
-		V₁₂ = V₁-V₂
-		V₁₃ = V₁-V₃
-		V₂₃ = V₂-V₃
-		t0 = t0 + h #advances time
-		if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin
-			VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
-			CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2) 
-			E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
-			E₂ = .5*(m[1]+m[2])*norm(VINCM)^2+.5*m[3]*norm(V₃)^2 - G*(m[1]+m[2])*m[3]/norm(R₃-CM₁₂)#Energy of outer binary
-			L₁ = cross(R₁-CM₁₂,m[1]*(V₁-VINCM))+cross(R₂-CM₁₂,m[2]*(V₂-VINCM)) #momentum of inner binary
-			L₂ = cross(CM₁₂,(m[1]+m[2])*VINCM)+cross(R₃,m[3]*V₃) #momentum of outer Binary
-			push!(Elist,E)
-			push!(Llist,L)
-			push!(E₁list,E₁)
-			push!(E₂list,E₂)
-			push!(L₁list,L₁)
-			push!(L₂list,L₂)
-			push!(lList,h)
-			push!(Tlist,t0)
-			push!(X1,x[1])
-			push!(X2,x[7])
-			push!(X3,x[13])
-			push!(Y1,x[2]) 
-			push!(Y2,x[8])
-			push!(Y3,x[14])
-			push!(Z1,x[3])
-			push!(Z2,x[9])
-			push!(Z3,x[15])
-			if numBodies == 4
-				push!(X4,x[19])
-				push!(Y4,x[20])
-				push!(Z4,x[21])
+			K = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
+			U = -(G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃)) #total gravitational potential energy
+			E = K + U #total energy
+			L = cross(R₁,m[1]*V₁)+cross(R₂,m[2]*V₂)+cross(R₃,m[3]*V₃) #finds angular momentum of system
+			V₁₂ = V₁-V₂
+			V₁₃ = V₁-V₃
+			V₂₃ = V₂-V₃
+			t0 = t0 + h #advances time
+			if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin
+				VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
+				CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2) 
+				E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
+				E₂ = .5*(m[1]+m[2])*norm(VINCM)^2+.5*m[3]*norm(V₃)^2 - G*(m[1]+m[2])*m[3]/norm(R₃-CM₁₂)#Energy of outer binary
+				L₁ = cross(R₁-CM₁₂,m[1]*(V₁-VINCM))+cross(R₂-CM₁₂,m[2]*(V₂-VINCM)) #momentum of inner binary
+				L₂ = cross(CM₁₂,(m[1]+m[2])*VINCM)+cross(R₃,m[3]*V₃) #momentum of outer Binary
+				if numBodies == 3
+					write(datafile,"$E, $(L[1]), $(L[2]), $(L[3]), $E₁, $E₂, $(L₁[1]), $(L₁[2]), $(L₁[3]), $(L₂[1]), $(L₂[2]), $(L₂[3]), $h, $t0, $(X1[1]), $(X2[1]), $(X3[1]), $(Y1[1]), $(Y2[1]), $(Y3[1]), $(Z1[1]), $(Z2[1]), $(Z3[1])","\n")
+				else
+					write(datafile,"$E, $(L[1]), $(L[2]), $(L[3]), $E₁, $E₂, $(L₁[1]), $(L₁[2]), $(L₁[3]), $(L₂[1]), $(L₂[2]), $(L₂[3]), $h, $t0, $(X1[1]), $(X2[1]), $(X3[1]), $(Y1[1]), $(Y2[1]), $(Y3[1]), $(Z1[1]), $(Z2[1]), $(Z3[1]), $(X4[1]), $(Y4[1]), $(Z4[1])","\n")
+				end
+				if L > Lmax
+					Lmax = L
+				elseif L < Lmin
+					Lmin = L
+				end
+				if E > Emax
+					Emax = E
+				elseif E < Emin
+					Emin = E
+				end
+				if h > lmax
+					lmax = h
+				elseif h < lmin
+					lmin = h
+				end
+				VINCM = nothing
+				CM₁₂ = nothing
+				E₁ = nothing
+				E₂ = nothing
+				L₁ = nothing
+				L₂ = nothing
 			end
-			if L > Lmax
-				Lmax = L
-			elseif L < Lmin
-				Lmin = L
+			h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+			if counter == 10000
+				update!(prog,convert(Int64,floor(t0)))
+				counter = 0
 			end
-			if E > Emax
-				Emax = E
-			elseif E < Emin
-				Emin = E
-			end
-			if h > lmax
-				lmax = h
-			elseif h < lmin
-				lmin = h
-			end
-			VINCM = nothing
-			CM₁₂ = nothing
-			E₁ = nothing
-			E₂ = nothing
-			L₁ = nothing
-			L₂ = nothing
+			counter += 1
+			R₁ = nothing
+			R₂ = nothing
+			R₃ = nothing
+			R₁₂ = nothing
+			R₁₃ = nothing
+			R₂₃ = nothing
+			V₁ = nothing
+			V₂ = nothing
+			V₃ = nothing
+			K = nothing
+			U = nothing
+			E = nothing
+			L = nothing
+			V₁₂ = nothing
+			V₁₃ = nothing
+			V₂₃ = nothing
 		end
-		h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-		if counter % 10000 == 0
-			update!(prog,convert(Int64,floor(t0)))
-		end
-		counter += 1
-		R₁ = nothing
-		R₂ = nothing
-		R₃ = nothing
-		R₁₂ = nothing
-		R₁₃ = nothing
-		R₂₃ = nothing
-		V₁ = nothing
-		V₂ = nothing
-		V₃ = nothing
-		K = nothing
-		U = nothing
-		E = nothing
-		L = nothing
-		V₁₂ = nothing
-		V₁₃ = nothing
-		V₂₃ = nothing
+		write(datafile,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
+		write(datafile,"N")
 	end
-	if numBodies == 3
-		v4x, v4y, v4z, X4, Y4, Z4 = [0,0,0,Float64[],Float64[],Float64[]] #so, if we only have three bodies, we just return empty values for the "test particle" to make julia happy
-	else 
-		v4x, v4y, v4z = [x[22],x[23],x[24]]
-	end
-	return m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, x[4], x[5], x[6], x[10], x[11], x[12], x[16], x[17], x[18], v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, counter #need initial velocities to write filename for saving
+	return hParam, t0, periods, counter #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -328,8 +317,80 @@ equal is also optional. Plot() equalizes the axes of the trajectories by default
 """
 function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
-	m, x, Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, MemorySave)
+	#Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, fileSave, MemorySave)
+	hParam, t0, periods, timesteps = System(file, fileSave, MemorySave)
 	NowTime = time()
+	datafile = "h≈(r÷v) data files/$fileSave"*".txt"
+	m = parse.(Float64,split(readlines(datafile)[end-2],","))
+	OriginalX = parse.(Float64,split(readlines(datafile)[end-1],","))
+	numBodies = parse.(Float64,split(readlines(datafile)[1],","))[1]
+	Elist = []
+	L1list = []
+	L2list = []
+	L3list = []
+	E₁list = []
+	E₂list = []
+	L₁1list = []
+	L₁2list = []
+	L₁3list = []
+	L₂1list = []
+	L₂2list = []
+	L₂3list = []
+	lList = []
+	Tlist = []
+	X1 = []
+	X2 = []
+	X3 = []
+	Y1 = []
+	Y2 = []
+	Y3 = []
+	Z1 = []
+	Z2 = []
+	Z3 = []
+	if numBodies==4
+		X4 = []
+		Y4 = []
+		Z4 = []
+	end
+	for i in 2:length(readlines(datafile))-3
+		println(i)
+		push!(Elist, parse(Float64,split(readlines(datafile)[i],",")[1]))
+		push!(L1list, parse(Float64,split(readlines(datafile)[i],",")[2]))
+		push!(L2list, parse(Float64,split(readlines(datafile)[i],",")[3]))
+		push!(L3list, parse(Float64,split(readlines(datafile)[i],",")[4]))
+		push!(E₁list, parse(Float64,split(readlines(datafile)[i],",")[5]))
+		push!(E₂list, parse(Float64,split(readlines(datafile)[i],",")[6]))
+		push!(L₁1list, parse(Float64,split(readlines(datafile)[i],",")[7]))
+		push!(L₁2list, parse(Float64,split(readlines(datafile)[i],",")[8]))
+		push!(L₁3list, parse(Float64,split(readlines(datafile)[i],",")[9]))
+		push!(L₂1list, parse(Float64,split(readlines(datafile)[i],",")[10]))
+		push!(L₂2list, parse(Float64,split(readlines(datafile)[i],",")[11]))
+		push!(L₂3list, parse(Float64,split(readlines(datafile)[i],",")[12]))
+		push!(lList, parse(Float64,split(readlines(datafile)[i],",")[13]))
+		push!(Tlist, parse(Float64,split(readlines(datafile)[i],",")[14]))
+		push!(X1, parse(Float64,split(readlines(datafile)[i],",")[15]))
+		push!(X2, parse(Float64,split(readlines(datafile)[i],",")[16]))
+		push!(X3, parse(Float64,split(readlines(datafile)[i],",")[17]))
+		push!(Y1, parse(Float64,split(readlines(datafile)[i],",")[18]))
+		push!(Y2, parse(Float64,split(readlines(datafile)[i],",")[19]))
+		push!(Y3, parse(Float64,split(readlines(datafile)[i],",")[20]))
+		push!(Z1, parse(Float64,split(readlines(datafile)[i],",")[21]))
+		push!(Z2, parse(Float64,split(readlines(datafile)[i],",")[22]))
+		push!(Z3, parse(Float64,split(readlines(datafile)[i],",")[23]))
+		if numBodies==4
+			push!(X4, parse(Float64,split(readlines(datafile)[i],",")[24]))
+			push!(Y4, parse(Float64,split(readlines(datafile)[i],",")[25]))
+			push!(Z4, parse(Float64,split(readlines(datafile)[i],",")[26]))
+		end
+	end
+	Llist = []
+	L₁list = []
+	L₂list = []
+	for i in 1:length(L1list)
+		push!(Llist,[L1list,L2list,L3list])
+		push!(L₁list,[L₁1list,L₁2list,L₁3list])
+		push!(L₂list,[L₂1list,L₂2list,L₂3list])
+	end
 	#=stability calculation=#
 	println("\n")
 	if E₁list[end]>0
@@ -424,45 +485,6 @@ function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equa
 				scatter3D(maxPoint,minPoint,maxPoint,alpha=0)
 				scatter3D(maxPoint,maxPoint,minPoint,alpha=0)
 				scatter3D(maxPoint,maxPoint,maxPoint,alpha=0) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
-			end
-		end
-	end
-	if fileSave != 0
-		bigArray = [Llist,Elist,Tlist,lList,X1,X2,Y1,Y2,Z1,Z2,X3,Y3,Z3] #stores the arrays we want to write into a 2-dimensional array
-		if numBodies == 4
-			push!(bigArray,X4,Y4,Z4)
-		end
-		push!(bigArray,L₁list,L₂list,[NowTime-firstTime],E₁list,E₂list)
-		tracker = Int64[] #this will store a data point for each 1D array
-		for i in 1:length(bigArray)
-			if occursin("Array{Float64,1}","$(bigArray[i])")
-				push!(tracker,18)
-			elseif occursin("Any","$(bigArray[i])") #we loop through each stringed version of the array to see if "Any[" is at the beginning of any of them
-				push!(tracker,5) #if there is, we store a 5
-			else
-				push!(tracker,2) #if there isn't, we store a 2
-			end
-		end
-		if numBodies == 3
-			#=I'm saving these in case we need them later
-			open("h≈(r÷v) data files/$(m[1]), $(m[2]), $(m[3]), $(X1[1]), $(Y1[1]), $(Z1[1]), $v1x, $v1y, $v1z, $(X2[1]), $(Y2[1]), $(Z2[1]), $v2x, $v2y, $v2z, $(X3[1]), $(Y3[1]), $(Z3[1]), $v3x, $v3y, $v3z, $hParam.txt","w") do f =#
-			open("h≈(r÷v) data files/$fileSave","w") do f
-				write(f,"3","\n")
-				for i in 1:length(bigArray)
-					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
-				end
-				write(f,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
-				write(f,"N")
-			end
-		else
-			#open("h≈(r÷v) data files/$(round(m[1];digits=5)), $(round(m[2];digits=5)), $(round(m[3];digits=5)), $(round(X1[1];digits=5)), $(round(Y1[1];digits=5)), $(round(Z1[1];digits=5)), $(round(v1x;digits=5)), $(round(v1y;digits=5)) $(round(v1z;digits=5)), $(round(X2[1];digits=5)), $(round(Y2[1];digits=5)), $(round(Z2[1];digits=5)), $(round(v2x;digits=5)), $(round(v2y;digits=5)), $(round(v2z;digits=5)), $(round(X3[1];digits=5)), $(round(Y3[1];digits=5)), $(round(Z3[1];digits=5)), $(round(v3x;digits=5)), $(round(v3y;digits=5)), $(round(v3z;digits=5)), $(round(X4[1];digits=5)), $(round(Y4[1];digits=5)), $(round(Z4[1];digits=5)), $(round(v4x;digits=1)), $(round(v4y;digits=5)), $(round(v4z;digits=5)), $hParam.txt","w") do f #UGH I had to do this because otherwise the file name would've been too long (ノಠ益ಠ)ノ彡┻━┻
-			open("h≈(r÷v) data files/$fileSave","w") do f
-				write(f,"4","\n")
-				for i in 1:length(bigArray)
-					write(f, "$(bigArray[i])"[tracker[i]:end-1],"\n") #now, we loop through, cutting off either the first 1 or 4 characters of the stringed array, depending on if it had that Any[, and also we cut off the last character, which is ].
-				end
-				write(f,"$m","\n","$OriginalX","\n")
-				write(f,"N")
 			end
 		end
 	end
