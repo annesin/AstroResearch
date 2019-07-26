@@ -98,7 +98,6 @@ function System(file, fileSave, MemorySave=true)
 	if numBodies>3
 		V₄ = [x[7],x[8],x[9]]
 	end
-	CMv₁₂ = [-velocityM1M2*sind(Θ), -velocityM1M2*cosd(Θ),0]
 	V₁₂ = V₁-V₂
 	V₁₃ = V₁-V₃
 	V₂₃ = V₂-V₃
@@ -116,21 +115,27 @@ function System(file, fileSave, MemorySave=true)
 
 	t0 = 0.0
 
-	Llist = Array{Float64}[L] #this keeps track of the system's rotational momentum over time, each entry is an L at time t
-	Elist = Float64[E] #same, but for energy
-	E₁list = Float64[E₁]
-	E₂list = Float64[E₂]
-	L₁list = Array{Float64}[L₁]
-	L₂list = Array{Float64}[L₂]
-	Tlist = Float64[t0] #keeps track of time independent of timestep
 	Lmax = L
 	Lmin = L
+	L0 = L 
 	Emax = E
 	Emin = E
+	E0 = E
+	E₁max = E₁
+	E₁min = E₁
+	E₁0 = E₁
+	E₂max = E₂
+	E₂min = E₂
+	E₂0 = E₂
+	L₁max = L₁
+	L₁min = L₁
+	L₁0 = L₁
+	L₂max = L₂
+	L₂min = L₂
+	L₂0 = L₂
 
 	h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 
-	lList = Float64[h] #recording length of timestep
 	lmax = h
 	lmin = h
 
@@ -175,11 +180,6 @@ function System(file, fileSave, MemorySave=true)
 		stepSave = 1
 	end 
 	prog = Progress(convert(Int,ceil(t)),0.5)
-	delete = false
-	if fileSave != 0
-		fileSave == "AutoSave.txt"
-		delete = true
-	end
 	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
 		write(datafile,"$numBodies","\n")
 		while t0 < t
@@ -203,7 +203,7 @@ function System(file, fileSave, MemorySave=true)
 			V₁₃ = V₁-V₃
 			V₂₃ = V₂-V₃
 			t0 = t0 + h #advances time
-			if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin
+			if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || L₁ > L₁max || L₁ < L₁min || L₂ > L₂max || L₂ < L₂min
 				VINCM = (m[2]*V₁+m[2]*V₂)/(m[1]+m[2])
 				CM₁₂ = (M1*R₁+M2*R₂)/(M1+M2) 
 				E₁ = .5*m[1]*norm(V₁-VINCM)^2+.5*m[2]*norm(V₂-VINCM)^2 - G*m[1]*m[2]/norm(R₁₂)#Energy of inner binary
@@ -230,12 +230,26 @@ function System(file, fileSave, MemorySave=true)
 				elseif h < lmin
 					lmin = h
 				end
-				VINCM = nothing
-				CM₁₂ = nothing
-				E₁ = nothing
-				E₂ = nothing
-				L₁ = nothing
-				L₂ = nothing
+				if E₁ > E₁max
+					E₁max = E₁
+				elseif E₁ < E₁min
+					E₁min = E₁
+				end
+				if E₂ > E₂max
+					E₂max = E₂
+				elseif E₂ < E₂min
+					E₂min = E₂
+				end
+				if L₁ > L₁max
+					L₁max = L₁
+				elseif L₁ < L₁min
+					L₁min = L₁
+				end
+				if L₂ > L₂max
+					L₂max = L₂
+				elseif L₂ < L₂min
+					L₂min = L₂
+				end
 			end
 			h = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 			if counter == 10000
@@ -243,27 +257,21 @@ function System(file, fileSave, MemorySave=true)
 				counter = 0
 			end
 			counter += 1
-			R₁ = nothing
-			R₂ = nothing
-			R₃ = nothing
-			R₁₂ = nothing
-			R₁₃ = nothing
-			R₂₃ = nothing
-			V₁ = nothing
-			V₂ = nothing
-			V₃ = nothing
-			K = nothing
-			U = nothing
-			E = nothing
-			L = nothing
-			V₁₂ = nothing
-			V₁₃ = nothing
-			V₂₃ = nothing
 		end
 		write(datafile,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
-		write(datafile,"N")
+		write(datafile,"$counter","\n")
 	end
-	return hParam, t0, periods, counter #need initial velocities to write filename for saving
+	if E₁>0
+		stability = 0
+		println("This is an unstable system.")
+	elseif E₂>0
+		stability = 0.5
+		println("This is a partially unstable system.")
+	else
+		stability = 1
+		println("This is a stable system.")
+	end
+	return hParam, t0, periods, counter, Emin, Emax, Lmin, Lmax, E₁min, E₁max, E₂min, E₂max, L₁min, L₁max, L₂min, L₂max, lmin, lmax, stability, E0, L0, E₁0, E₂0, L₁0, L₂0 #need initial velocities to write filename for saving
 end
 
 function RK4(f,x,m,h)
@@ -295,7 +303,6 @@ function RK4(f,x,m,h)
 
 #returns the desired step
 	y=x+(k1+2*k2+2*k3+k4)/6
-	x=nothing
 	return y
 
 end 
@@ -315,178 +322,36 @@ fileSave is optional. However, if a string is entered, for example, "Sample.txt"
 
 equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
 """
-function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+function Master(file, fileSave="AutoSave", writeData=0, MemorySave=true) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	firstTime = time() #measures runtime of program
 	#Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, fileSave, MemorySave)
-	hParam, t0, periods, timesteps = System(file, fileSave, MemorySave)
+	hParam, t0, periods, timesteps, Emin, Emax, Lmin, Lmax, E₁min, E₁max, E₂min, E₂max, L₁min, L₁max, L₂min, L₂max, lmin, lmax, stability, E0, L0, E₁0, E₂0, L₁0, L₂0 = System(file, fileSave, MemorySave)
 	NowTime = time()
 	datafile = "h≈(r÷v) data files/$fileSave"*".txt"
-	m = parse.(Float64,split(readlines(datafile)[end-2],","))
-	OriginalX = parse.(Float64,split(readlines(datafile)[end-1],","))
+	m = parse.(Float64,split(readlines(datafile)[end-2],",")) #keep
+	OriginalX = parse.(Float64,split(readlines(datafile)[end-1],",")) #keep
 	numBodies = parse.(Float64,split(readlines(datafile)[1],","))[1]
-	Elist = []
-	L1list = []
-	L2list = []
-	L3list = []
-	E₁list = []
-	E₂list = []
-	L₁1list = []
-	L₁2list = []
-	L₁3list = []
-	L₂1list = []
-	L₂2list = []
-	L₂3list = []
-	lList = []
-	Tlist = []
-	X1 = []
-	X2 = []
-	X3 = []
-	Y1 = []
-	Y2 = []
-	Y3 = []
-	Z1 = []
-	Z2 = []
-	Z3 = []
-	if numBodies==4
-		X4 = []
-		Y4 = []
-		Z4 = []
-	end
-	for i in 2:length(readlines(datafile))-3
-		println(i)
-		push!(Elist, parse(Float64,split(readlines(datafile)[i],",")[1]))
-		push!(L1list, parse(Float64,split(readlines(datafile)[i],",")[2]))
-		push!(L2list, parse(Float64,split(readlines(datafile)[i],",")[3]))
-		push!(L3list, parse(Float64,split(readlines(datafile)[i],",")[4]))
-		push!(E₁list, parse(Float64,split(readlines(datafile)[i],",")[5]))
-		push!(E₂list, parse(Float64,split(readlines(datafile)[i],",")[6]))
-		push!(L₁1list, parse(Float64,split(readlines(datafile)[i],",")[7]))
-		push!(L₁2list, parse(Float64,split(readlines(datafile)[i],",")[8]))
-		push!(L₁3list, parse(Float64,split(readlines(datafile)[i],",")[9]))
-		push!(L₂1list, parse(Float64,split(readlines(datafile)[i],",")[10]))
-		push!(L₂2list, parse(Float64,split(readlines(datafile)[i],",")[11]))
-		push!(L₂3list, parse(Float64,split(readlines(datafile)[i],",")[12]))
-		push!(lList, parse(Float64,split(readlines(datafile)[i],",")[13]))
-		push!(Tlist, parse(Float64,split(readlines(datafile)[i],",")[14]))
-		push!(X1, parse(Float64,split(readlines(datafile)[i],",")[15]))
-		push!(X2, parse(Float64,split(readlines(datafile)[i],",")[16]))
-		push!(X3, parse(Float64,split(readlines(datafile)[i],",")[17]))
-		push!(Y1, parse(Float64,split(readlines(datafile)[i],",")[18]))
-		push!(Y2, parse(Float64,split(readlines(datafile)[i],",")[19]))
-		push!(Y3, parse(Float64,split(readlines(datafile)[i],",")[20]))
-		push!(Z1, parse(Float64,split(readlines(datafile)[i],",")[21]))
-		push!(Z2, parse(Float64,split(readlines(datafile)[i],",")[22]))
-		push!(Z3, parse(Float64,split(readlines(datafile)[i],",")[23]))
-		if numBodies==4
-			push!(X4, parse(Float64,split(readlines(datafile)[i],",")[24]))
-			push!(Y4, parse(Float64,split(readlines(datafile)[i],",")[25]))
-			push!(Z4, parse(Float64,split(readlines(datafile)[i],",")[26]))
-		end
-	end
-	Llist = []
-	L₁list = []
-	L₂list = []
-	for i in 1:length(L1list)
-		push!(Llist,[L1list,L2list,L3list])
-		push!(L₁list,[L₁1list,L₁2list,L₁3list])
-		push!(L₂list,[L₂1list,L₂2list,L₂3list])
-	end
 	#=stability calculation=#
 	println("\n")
-	if E₁list[end]>0
-		stability = 0
-		println("This is an unstable system.")
-	elseif E₂list[end]>0
-		stability = 0.5
-		println("This is a partially unstable system.")
-	else
-		stability = 1
-		println("This is a stable system.")
-	end
-	L0 = Llist[1]
-	Llist = map(x -> (x-L0)/norm(L0),Llist) #plotting ΔL, not L
-	E0 = Elist[1]
-	Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-	E10 = E₁list[1]
-	E₁list = map(x -> (x-E10)/E10,E₁list)
-	E20 = E₂list[1]
-	E₂list = map(x -> (x-E20)/E20,E₂list)
-	L10 = L₁list[1]
-	L₁list = map(x -> (x-L10)/norm(L10),L₁list) #plotting ΔL, not L
-	L20 = L₂list[1]
-	L₂list = map(x -> (x-L20)/norm(L20),L₂list) #plotting ΔL, not L
-	println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
-	println("The angular momentum varied by $(minimum(map(x -> norm(x),Llist))) to $(maximum(map(x -> norm(x),Llist))) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
+	Lmin = (Lmin-L0)/norm(L0)
+	Lmax = (Lmax-L0)/norm(L0)
+	Emin = (Emin-E0)/(E0)
+	Emax = (Emax-E0)/(E0)
+	L₁min = (L₁min-L₁0)/norm(L₁0)
+	L₁max = (L₁max-L₁0)/norm(L₁0)
+	L₂min = (L₂min-L₂0)/norm(L₂0)
+	L₂max = (L₂max-L₂0)/norm(L₂0)
+	E₁min = (E₁min-E₁0)/(E₁0)
+	E₁max = (E₁max-E₁0)/(E₁0)
+	E₂min = (E₂min-E₂0)/(E₂0)
+	E₂max = (E₂max-E₂0)/(E₂0)
+	println("The timestep varied from $lmin to $lmax.")
+	println("The angular momentum varied by $(norm(Lmin)) to $(norm(Lmax)) while the energy varied by $Emin to $Emax.") #magnitude of angular momentum here for simplicity
 	println("This ran in $(NowTime-firstTime) seconds.")
 	println("This took $timesteps timesteps to simulate.")
-	if color == "L"
-		plt.plot(Tlist,map(x -> x[1],Llist),linestyle="solid",color="red")
-		plt.plot(Tlist,map(x -> x[2],Llist),linestyle="solid",color="green")
-		plt.plot(Tlist,map(x -> x[3],Llist),linestyle="solid",color="blue") #plotting change in individual components
-	elseif color == "E"
-		plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
-	elseif color == "EL"
-		plt.plot(Tlist,map(x -> x[1],Llist),linestyle="solid",color="green")
-		plt.plot(Tlist,map(x -> x[2],Llist),linestyle="solid",color="blue") 
-		plt.plot(Tlist,map(x -> x[3],Llist),linestyle="solid",color="darkblue") #plotting change in individual components
-		plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
-	elseif color == "E1"
-		plt.plot(Tlist,E₁list)
-	elseif color == "L1"
-		plt.plot(Tlist,map(x -> x[1],L₁list),linestyle="solid",color="red")
-		plt.plot(Tlist,map(x -> x[2],L₁list),linestyle="solid",color="green") 
-		plt.plot(Tlist,map(x -> x[3],L₁list),linestyle="solid",color="blue") #plotting change in individual components
-	elseif color == "E2"
-		plt.plot(Tlist,E₂list)
-	elseif color == "L2"
-		plt.plot(Tlist,map(x -> x[1],L₂list),linestyle="solid",color="red")
-		plt.plot(Tlist,map(x -> x[2],L₂list),linestyle="solid",color="green") 
-		plt.plot(Tlist,map(x -> x[3],L₂list),linestyle="solid",color="blue") #plotting change in individual components
-	elseif color == "Es"
-		plt.plot(Tlist,E₁list,linestyle="solid",color="green")
-		plt.plot(Tlist,E₂list,linestyle="solid",color="red")
-	elseif color == "Ls"
-		plt.plot(Tlist,map(x -> x[1],L₁list),linestyle="solid",color="brown")
-		plt.plot(Tlist,map(x -> x[2],L₁list),linestyle="solid",color="red") 
-		plt.plot(Tlist,map(x -> x[3],L₁list),linestyle="solid",color="maroon") #plotting change in individual components
-		plt.plot(Tlist,map(x -> x[1],L₂list),linestyle="solid",color="royalblue")
-		plt.plot(Tlist,map(x -> x[2],L₂list),linestyle="solid",color="blue") 
-		plt.plot(Tlist,map(x -> x[3],L₂list),linestyle="solid",color="darkblue") #plotting change in individual components
-	elseif color == "time"
-		plt.plot(lList,linestyle="solid",color="green")
-	elseif color == "none" #used for automatic testing
-	else
-		if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
-			plt.plot(X1,Y1,linestyle="solid",color="red")
-			plt.plot(X2,Y2,linestyle="solid",color=color)
-			plt.plot(X3,Y3,linestyle="solid",color="green")
-			if numBodies == 4
-				plt.plot(X4,Y4,linestyle="solid",color="orange")
-			end
-			if equal == 0 #this will equalize the axes by default. Otherwise, it'll just plot only what it needs too
-				plt.axis("equal")
-			end
-		else
-			ax = plt.axes(projection="3d")
-			plot3D(X1,Y1,Z1,linestyle="solid",color="red")
-			plot3D(X2,Y2,Z2,linestyle="solid",color=color)
-			plot3D(X3,Y3,Z3,linestyle="solid",color="green")
-			if numBodies == 4
-				plot3D(X4,Y4,Z4,linestyle="solid",color="orange")
-			end
-			if equal == 0
-				maxPoint = maximum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
-				minPoint = minimum(vcat(X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4))
-				scatter3D(minPoint,minPoint,minPoint,alpha=0)
-				scatter3D(minPoint,minPoint,maxPoint,alpha=0)
-				scatter3D(minPoint,maxPoint,minPoint,alpha=0)
-				scatter3D(minPoint,maxPoint,maxPoint,alpha=0)
-				scatter3D(maxPoint,minPoint,minPoint,alpha=0)
-				scatter3D(maxPoint,minPoint,maxPoint,alpha=0)
-				scatter3D(maxPoint,maxPoint,minPoint,alpha=0)
-				scatter3D(maxPoint,maxPoint,maxPoint,alpha=0) #creates cube made out of extrema so it includes everything and so that the axes are all equal. I think this will work.
-			end
-		end
+	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
+		write(datafile,"$(NowTime-firstTime)","\n")
+		write(datafile,"N","\n")
 	end
 	record = true
 	rowNumber = 0
@@ -518,26 +383,17 @@ function Plot(file, color="none", fileSave=0, writeData=0, MemorySave=true, equa
 					sheet["J$i"] = "$periods periods"
 				end
 				sheet["K$i"] = hParam
-				sheet["L$i"] = "[$(minimum(Elist)),$(maximum(Elist))]"
-				Lx = map(x -> x[1],Llist)
-				Ly = map(x -> x[2],Llist)
-				Lz = map(x -> x[3],Llist)
-				sheet["M$i"] = "[[$(minimum(Lx)),$(minimum(Ly)),$(minimum(Lz))],[$(maximum(Lx)),$(maximum(Ly)),$(maximum(Lz))]]"
-				sheet["N$i"] = "[$(minimum(E₁list)),$(maximum(E₁list))]"
-				sheet["O$i"] = "[$(minimum(E₂list)),$(maximum(E₂list))]"
-				L1x = map(x -> x[1],L₁list)
-				L1y = map(x -> x[2],L₁list)
-				L1z = map(x -> x[3],L₁list)
-				L2x = map(x -> x[1],L₂list)
-				L2y = map(x -> x[2],L₂list)
-				L2z = map(x -> x[3],L₂list)
-				sheet["P$i"] = "[[$(minimum(L1x)),$(minimum(L1y)),$(minimum(L1z))],[$(maximum(L1x)),$(maximum(L1y)),$(maximum(L1z))]]"
-				sheet["Q$i"] = "[[$(minimum(L2x)),$(minimum(L2y)),$(minimum(L2z))],[$(maximum(L2x)),$(maximum(L2y)),$(maximum(L2z))]]"
+				sheet["L$i"] = "[$Emin,$Emax]"
+				sheet["M$i"] = "[[$(Lmax[1]),$(Lmin[2]),$(Lmin[3])],[$(Lmax[1]),$(Lmax[2]),$(Lmax[3])]]"
+				sheet["N$i"] = "[$E₁min,$E₁max]"
+				sheet["O$i"] = "[$E₂min,$E₂max]"
+				sheet["P$i"] = "[[$(L₁min[1]),$(L₁min[2]),$(L₁min[3])],[$(L₁max[1]),$(L₁max[2]),$(L₁max[3])]]"
+				sheet["Q$i"] = "[[$(L₂min[1]),$(L₂min[2]),$(L₂min[3])],[$(L₂max[1]),$(L₂max[2]),$(L₂max[3])]]"
 				sheet["R$i"] = NowTime-firstTime
-				sheet["S$i"] = "[$(minimum(lList)),$(maximum(lList))]"
+				sheet["S$i"] = "[$lmin,$lmax]"
 				sheet["T$i"] = stability
 				sheet["U$i"] = rowNumber
-				if minimum(Elist)<-10.0^-3 || maximum(Elist)>10.0^-3
+				if Emin<-10.0^-3 || Emax>10.0^-3
 					sheet["V$i"] = 0
 				else
 					sheet["V$i"] = 1
