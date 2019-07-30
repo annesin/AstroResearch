@@ -1,4 +1,4 @@
-import LinearAlgebra.norm
+ENV["MPLBACKEND"]="qt5agg" #switching the environment in which the packages are imported and run in. If you don't do this, your computer will crash and will not be able to run Julia until it is restarted
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot 
@@ -105,20 +105,8 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
             stability = 1
             println("This is a stable system.")
         end
-        L0 = Llist[1]
-        Llist = map(x -> (x-L0)/norm(L0),Llist) #plotting ΔL, not L
-        E0 = Elist[1]
-        Elist = map(x -> (x-E0)/E0,Elist) #plotting ΔE, not E
-        E10 = E₁list[1]
-        E₁list = map(x -> (x-E10)/E10,E₁list)
-        E20 = E₂list[1]
-        E₂list = map(x -> (x-E20)/E20,E₂list)
-        L10 = L₁list[1]
-        L₁list = map(x -> (x-L10)/norm(L10),L₁list) #plotting ΔL, not L
-        L20 = L₂list[1]
-        L₂list = map(x -> (x-L20)/norm(L20),L₂list) #plotting ΔL, not L
         println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
-        println("The angular momentum varied by $(minimum(map(x -> norm(x),Llist))) to $(maximum(map(x -> norm(x),Llist))) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
+        println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
         println("This ran in $timeTaken seconds.")
         println("This took $timesteps timesteps to simulate.")
         if color == "L"
