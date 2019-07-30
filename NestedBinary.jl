@@ -1,3 +1,4 @@
+import LinearAlgebra.norm
 using Pkg
 Pkg.add("PyPlot")
 using PyPlot
@@ -152,6 +153,9 @@ function System(file, fileSave, MemorySave=true)
 	Lmax = sqrt(LX^2+LY^2+LZ^2)
 	Lmin = sqrt(LX^2+LY^2+LZ^2)
 	L0 = sqrt(LX^2+LY^2+LZ^2)
+	LX0 = LX
+	LY0 = LY
+	LZ0 = LZ
 	Emax = E
 	Emin = E
 	E0 = E
@@ -164,34 +168,58 @@ function System(file, fileSave, MemorySave=true)
 	L₁max = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
 	L₁min = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
 	L₁0 = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
+	L₁X0 = L₁X
+	L₁Y0 = L₁Y
+	L₁Z0 = L₁Z
 	L₂max = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
 	L₂min = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
 	L₂0 = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
-
-	h1 = hParam*sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
-	h2 = hParam*sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
-	h3 = hParam*sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
+	L₂X0 = L₂X
+	L₂Y0 = L₂Y
+	L₂Z0 = L₂Z
+	E = (E-E0)/E0
+	LX = (LX-LX0)/LX0
+	LY = (LY-LY0)/LY0
+	LZ = (LZ-LZ0)/LZ0
+	L₁X = (L₁X-L₁X0)/L₁X0
+	L₁Y = (L₁Y-L₁Y0)/L₁Y0
+	L₁Z = (L₁Z-L₁Z0)/L₁Z0
+	L₂X = (L₂X-L₂X0)/L₂X0
+	L₂Y = (L₂Y-L₂Y0)/L₂Y0
+	L₂Z = (L₂Z-L₂Z0)/L₂Z0
+	R₁₂ = [R₁₂X,R₁₂Y,R₁₂Z]
+	R₁₃ = [R₁₃X,R₁₃Y,R₁₃Z]
+	R₂₃ = [R₂₃X,R₂₃Y,R₂₃Z]
+	V₁₂ = [V₁₂X,V₁₂Y,V₁₂Z]
+	V₁₃ = [V₁₃X,V₁₃Y,V₁₃Z]
+	V₂₃ = [V₂₃X,V₂₃Y,V₂₃Z]
+	h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
+	h2 = sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
+	h3 = sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
 	if h1 < h2
 		if h1 < h3
-			h = h1
+			h = hParam*h1
 		else
-			h = h3
+			h = hParam*h3
 		end
 	else
 		if h2 < h3
-			h = h2
+			h = hParam*h2
 		else
-			h = h3
+			h = hParam*h3
 		end
 	end
-
+	h1 = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+	if h != h1
+		println([h1,h])
+	end
 	lmax = h
 	lmin = h
 
 	#calculates inner binary period
 	Iperiod = sqrt(4*pi^2*A1/(1+e1)/G*(M1+M2))
 
-	x=[X1[1],Y1[1],Z1[1],V₁X,V₁Y,V₁Z,X2[1],Y2[1],Z2[1],V₂X,V₂Y,V₂Y,X3[1],Y3[1],Z3[1],V₃X,V₃Y,V₃Z]
+	x=[X1[1],Y1[1],Z1[1],V₁X,V₁Y,V₁Z,X2[1],Y2[1],Z2[1],V₂X,V₂Y,V₂Z,X3[1],Y3[1],Z3[1],V₃X,V₃Y,V₃Z]
 	if numBodies>3
 		push!(x,X4[1],Y4[1],Z4[1],V₄X,V₄Y,V₄Z)
 	end
@@ -252,7 +280,12 @@ function System(file, fileSave, MemorySave=true)
 	end 
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
-		write(datafile,"$numBodies","\n")
+		write(datafile,"$(convert(Int64,numBodies))","\n")
+		if numBodies == 3 #!!make X1 arrays and stuff work again
+			write(datafile,"$E, $(LX), $(LY), $(LZ), $E₁, $E₂, $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(x[1]), $(x[7]), $(x[3]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n")
+		else
+			write(datafile,"$E, $(LX), $(LY), $(LZ), $E₁, $E₂, $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(x[1]), $(x[7]), $(x[3]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
+		end
 		firstTime = time()
 		while t0 < t
 			#we will add an adaptive timestep later
@@ -275,13 +308,34 @@ function System(file, fileSave, MemorySave=true)
 			V₂₃X = x[10]-x[16]
 			V₂₃Y = x[11]-x[17] 
 			V₂₃Z = x[12]-x[18]
-
-			K = .5*m[1]*sqrt(V₁X^2+V₁Y^2+V₁Z^2)^2+.5*m[2]*sqrt(V₂X^2+V₂Y^2+V₂Z^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 #overall kinetic energy
+			K = .5*m[1]*(V₁X^2+V₁Y^2+V₁Z^2)+.5*m[2]*(V₂X^2+V₂Y^2+V₂Z^2)+.5*m[3]*(V₃X^2+V₃Y^2+V₃Z^2) #overall kinetic energy
 			U = -(G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)+G*m[1]*m[3]/sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)+G*m[2]*m[3]/sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)) #total gravitational potential energy
 			E = K + U #total energy 
+			E = (E-E0)/E0
+			R₁₂ = [R₁₂X,R₁₂Y,R₁₂Z]
+			R₁₃ = [R₁₃X,R₁₃Y,R₁₃Z]
+			R₂₃ = [R₂₃X,R₂₃Y,R₂₃Z]
+			V₁₂ = [V₁₂X,V₁₂Y,V₁₂Z]
+			V₁₃ = [V₁₃X,V₁₃Y,V₁₃Z]
+			V₂₃ = [V₂₃X,V₂₃Y,V₂₃Z]
+			#=V₁ = [V₁X,V₁Y,V₁Z]
+			V₂ = [V₂X,V₂Y,V₂Z]
+			V₃ = [V₃X,V₃Y,V₃Z]
+			R₁₂ = [R₁₂X,R₁₂Y,R₁₂Z]
+			R₁₃ = [R₁₃X,R₁₃Y,R₁₃Z]
+			R₂₃ = [R₂₃X,R₂₃Y,R₂₃Z]
+			K1 = .5*m[1]*norm(V₁)^2+.5*m[2]*norm(V₂)^2+.5*m[3]*norm(V₃)^2 #overall kinetic energy
+			U1 = G*m[1]*m[2]/norm(R₁₂)+G*m[1]*m[3]/norm(R₁₃)+G*m[2]*m[3]/norm(R₂₃) #total gravitational potential energy
+			E1 = K1 - U1 #total energy
+			if E1 != E
+				println([E1,E])
+			end=#
 			LX = m[1]*(R₁Y*V₁Z-R₁Z*V₁Y)+m[2]*(R₂Y*V₂Z-R₂Z*V₂Y)+m[3]*(R₃Y*V₃Z-R₃Z*V₃Y)
 			LY = m[1]*(R₁Z*V₁X-R₁X*V₁Z)+m[2]*(R₂Z*V₂X-R₂X*V₂Z)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
 			LZ = m[1]*(R₁X*V₁Y-R₁Y*V₁X)+m[2]*(R₂X*V₂Y-R₂Y*V₂X)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
+			LX = (LX-LX0)/LX0
+			LY = (LY-LY0)/LY0
+			LZ = (LZ-LZ0)/LZ0
 			t0 = t0 + h #advances time
 			if counter%stepSave == 0 || sqrt(LX^2+LY^2+LZ^2) > Lmax || sqrt(LX^2+LY^2+LZ^2) < Lmin || E > Emax || E < Emin || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max || sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min || sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max || sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min
 				VINCMX = (m[2]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
@@ -298,10 +352,16 @@ function System(file, fileSave, MemorySave=true)
 				L₂X = (m[1]+m[2])*(CM₁₂Y*VINCMZ-CM₁₂Z*VINCMY)+m[3]*(R₃Y*V₃Z-R₃Z*V₃Y)
 				L₂Y = (m[1]+m[2])*(CM₁₂Z*VINCMX-CM₁₂X*VINCMZ)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
 				L₂Z = (m[1]+m[2])*(CM₁₂X*VINCMY-CM₁₂Y*VINCMX)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
-				if numBodies == 3 #!!make X1 arrays and stuff work again
-					write(datafile,"$E, $(LX), $(LY), $(LZ), $E₁, $E₂, $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(X1[1]), $(X2[1]), $(X3[1]), $(Y1[1]), $(Y2[1]), $(Y3[1]), $(Z1[1]), $(Z2[1]), $(Z3[1])","\n")
+				L₁X = (L₁X-L₁X0)/L₁X0
+				L₁Y = (L₁Y-L₁Y0)/L₁Y0
+				L₁Z = (L₁Z-L₁Z0)/L₁Z0
+				L₂X = (L₂X-L₂X0)/L₂X0
+				L₂Y = (L₂Y-L₂Y0)/L₂Y0
+				L₂Z = (L₂Z-L₂Z0)/L₂Z0
+				if numBodies == 3 
+					write(datafile,"$E, $(LX), $(LY), $(LZ), $E₁, $E₂, $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(x[1]), $(x[7]), $(x[3]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n")
 				else
-					write(datafile,"$E, $(LX), $(LY), $(LZ), $E₁, $E₂, $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(X1[1]), $(X2[1]), $(X3[1]), $(Y1[1]), $(Y2[1]), $(Y3[1]), $(Z1[1]), $(Z2[1]), $(Z3[1]), $(X4[1]), $(Y4[1]), $(Z4[1])","\n")
+					write(datafile,"$E, $(LX), $(LY), $(LZ), $E₁, $E₂, $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(x[1]), $(x[7]), $(x[3]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
 				end
 				if sqrt(LX^2+LY^2+LZ^2) > Lmax
 					Lmax = sqrt(LX^2+LY^2+LZ^2)
@@ -339,22 +399,26 @@ function System(file, fileSave, MemorySave=true)
 					L₂min = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
 				end
 			end
-			h1 = hParam*sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
-			h2 = hParam*sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
-			h3 = hParam*sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
+			h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
+			h2 = sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
+			h3 = sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
 			if h1 < h2
 				if h1 < h3
-					h = h1
+					h = hParam*h1
 				else
-					h = h3
+					h = hParam*h3
 				end
 			else
 				if h2 < h3
-					h = h2
+					h = hParam*h2
 				else
-					h = h3
+					h = hParam*h3
 				end
 			end #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+			h1 = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+			if h != h1
+				println([h1,h])
+			end
 			if counter%10000 == 0
 				update!(prog,convert(Int64,floor(t0)))
 			end
@@ -437,18 +501,6 @@ function Master(file, fileSave="AutoSave", writeData=0, MemorySave=true) #plotti
 	timeTaken = parse(Float64,readlines(datafile)[end-1])
 	#=stability calculation=#
 	println("\n")
-	Lmin = (Lmin-L0)/(L0)
-	Lmax = (Lmax-L0)/(L0)
-	Emin = (Emin-E0)/(E0)
-	Emax = (Emax-E0)/(E0)
-	L₁min = (L₁min-L₁0)/(L₁0)
-	L₁max = (L₁max-L₁0)/(L₁0)
-	L₂min = (L₂min-L₂0)/(L₂0)
-	L₂max = (L₂max-L₂0)/(L₂0)
-	E₁min = (E₁min-E₁0)/(E₁0)
-	E₁max = (E₁max-E₁0)/(E₁0)
-	E₂min = (E₂min-E₂0)/(E₂0)
-	E₂max = (E₂max-E₂0)/(E₂0)
 	println("The timestep varied from $lmin to $lmax.")
 	println("The angular momentum varied by $((Lmin)) to $((Lmax)) while the energy varied by $Emin to $Emax.") #magnitude of angular momentum here for simplicity
 	println("This ran in $timeTaken seconds.")
