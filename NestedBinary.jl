@@ -144,6 +144,9 @@ function System(file, fileSave, MemorySave=true)
 	L₂Y = (m[1]+m[2])*(CM₁₂Z*VINCMX-CM₁₂X*VINCMZ)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
 	L₂Z = (m[1]+m[2])*(CM₁₂X*VINCMY-CM₁₂Y*VINCMX)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
 
+	E₁Stability = E₁
+	E₂Stability = E₂ #these will be used as absolute energies (not deviations) because we need to determine the stability of the system at the end
+
 	t0 = 0.0
 
 	Lmax, LmaxX, LmaxY, LmaxZ, Lmin, LminX, LminY, LminZ, Emax, Emin, E₁max, E₁min, E₂max, E₂min, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₁min, L₁minX, L₁minY, L₁minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, L₂min, L₂minX, L₂minY, L₂minZ = zeros(30) #all these extrema are deviations from the original measurement, so they're all originally zero
@@ -245,7 +248,7 @@ function System(file, fileSave, MemorySave=true)
 		counter = 0
 	else
 		stepSave = 1
-	end 
+	end
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
 		write(datafile,"$(convert(Int64,numBodies))","\n")
@@ -293,12 +296,22 @@ function System(file, fileSave, MemorySave=true)
 				CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
 				E₁ = .5*m[1]*sqrt((V₁X-VINCMX)^2+(V₁Y-VINCMY)^2+(V₁Z-VINCMZ)^2)^2+.5*m[2]*sqrt((V₂X-VINCMX)^2+(V₂Y-VINCMY)^2+(V₂Z-VINCMZ)^2)^2 - G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)#Energy of inner binary
 				E₂ = .5*(m[1]+m[2])*sqrt(VINCMX^2+VINCMY^2+VINCMZ^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 - G*(m[1]+m[2])*m[3]/sqrt((R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2)#Energy of outer binary we don't normalize these now because we need to determine stability of the system
+				E₁Stability = E₁
+				E₂Stability = E₂
+				E₁ = (E₁-E₁0)/E₁0
+				E₂ = (E₂-E₂0)/E₂0
 				L₁X = m[1]*((R₁Y-CM₁₂Y)*(V₁Z-VINCMZ)-(R₁Z-CM₁₂Z)*(V₁Y-VINCMY))+m[2]*((R₂Y-CM₁₂Y)*(V₂Z-VINCMZ)-(R₂Z-CM₁₂Z)*(V₂Y-VINCMY))
 				L₁Y = m[1]*((R₁Z-CM₁₂Z)*(V₁X-VINCMX)-(R₁X-CM₁₂X)*(V₁Z-VINCMZ))+m[2]*((R₂Z-CM₁₂Z)*(V₂X-VINCMX)-(R₂X-CM₁₂X)*(V₂Z-VINCMZ))
 				L₁Z = m[1]*((R₁X-CM₁₂X)*(V₁Y-VINCMY)-(R₁Y-CM₁₂Y)*(V₁X-VINCMX))+m[2]*((R₂X-CM₁₂X)*(V₂Y-VINCMY)-(R₂Y-CM₁₂Y)*(V₂X-VINCMX))
 				L₂X = (m[1]+m[2])*(CM₁₂Y*VINCMZ-CM₁₂Z*VINCMY)+m[3]*(R₃Y*V₃Z-R₃Z*V₃Y)
 				L₂Y = (m[1]+m[2])*(CM₁₂Z*VINCMX-CM₁₂X*VINCMZ)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
 				L₂Z = (m[1]+m[2])*(CM₁₂X*VINCMY-CM₁₂Y*VINCMX)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
+				L = sqrt(LX^2+LY^2+LZ^2)
+				L = (L-L0)/L0
+				L₁ = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
+				L₁ = (L₁-L₁0)/L₁X0
+				L₂ = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
+				L₂ = (L₂-L₂0)/L₂0
 				L₁X = (L₁X-L₁X0)/L₁X0
 				L₁Y = (L₁Y-L₁Y0)/L₁Y0 
 				L₁Z = (L₁Z-L₁Z0)/L₁Z0
@@ -306,20 +319,20 @@ function System(file, fileSave, MemorySave=true)
 				L₂Y = (L₂Y-L₂Y0)/L₂Y0
 				L₂Z = (L₂Z-L₂Z0)/L₂Z0
 				if numBodies == 3 
-					write(datafile,"$E, $(LX), $(LY), $(LZ), $((E₁-E₁0)/E₁0), $((E₂-E₂0)/E₂0), $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n")
+					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n")
 				else
-					write(datafile,"$E, $(LX), $(LY), $(LZ), $((E₁-E₁0)/E₁0), $((E₂-E₂0)/E₂0), $(L₁X), $(L₁Y), $(L₁Z), $(L₂X), $(L₂Y), $(L₂Z), $h, $t0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
+					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y), $L₂Z, $h, $t0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
 				end
-				if sqrt(LX^2+LY^2+LZ^2) > Lmax
+				if L > Lmax
 					LmaxX = LX
 					LmaxY = LY
 					LmaxZ = LZ
-					Lmax = sqrt(LX^2+LY^2+LZ^2)
-				elseif sqrt(LX^2+LY^2+LZ^2) < Lmin
+					Lmax = L
+				elseif L < Lmin
 					LminX = LX
 					LminY = LY
 					LminZ = LZ #!!do this component wise
-					Lmin = sqrt(LX^2+LY^2+LZ^2)
+					Lmin = L
 				end
 				if E > Emax
 					Emax = E
@@ -331,37 +344,37 @@ function System(file, fileSave, MemorySave=true)
 				elseif h < lmin
 					lmin = h
 				end
-				if ((E₁-E₁0)/E₁0) > E₁max
-					E₁max = ((E₁-E₁0)/E₁0)
-				elseif ((E₁-E₁0)/E₁0) < E₁min
-					E₁min = ((E₁-E₁0)/E₁0)
+				if E₁ > E₁max
+					E₁max = E₁
+				elseif E₁ < E₁min
+					E₁min = E₁
 				end
-				if ((E₂-E₂0)/E₂0) > E₂max
-					E₂max = ((E₂-E₂0)/E₂0)
-				elseif ((E₂-E₂0)/E₂0) < E₂min
-					E₂min = ((E₂-E₂0)/E₂0)
+				if E₂ > E₂max
+					E₂max = E₂
+				elseif E₂ < E₂min
+					E₂min = E₂
 				end
-				if sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max #!!test stability at the end
+				if L₁ > L₁max #!!test stability at the end
 					L₁maxX = L₁X
 					L₁maxY = L₁Y
 					L₁maxZ = L₁Z
-					L₁max = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
-				elseif sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min
+					L₁max = L₁
+				elseif L₁ < L₁min
 					L₁minX = L₁X
 					L₁minY = L₁Y
 					L₁minZ = L₁Z
-					L₁min = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
+					L₁min = L₁
 				end
-				if sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max
+				if L₂ > L₂max
 					L₂maxX = L₂X
 					L₂maxY = L₂Y
 					L₂maxZ = L₂Z
-					L₂max = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
-				elseif sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min
+					L₂max = L₂
+				elseif L₂ < L₂min
 					L₂minX = L₂X
 					L₂minY = L₂Y
 					L₂minZ = L₂Z 
-					L₂min = sqrt(L₂X^2+L₂Y^2+L₂Z^2) #!!change excel input cause of this
+					L₂min = L₂ #!!change excel input cause of this
 				end
 			end
 			h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
@@ -395,10 +408,10 @@ function System(file, fileSave, MemorySave=true)
 		write(datafile,"$(NowTime-firstTime)","\n")
 		write(datafile,"N")
 	end
-	if E₁>0
+	if E₁Stability>0
 		stability = 0
 		println("This is an unstable system.")
-	elseif E₂>0
+	elseif E₂Stability>0
 		stability = 0.5
 		println("This is a partially unstable system.")
 	else
