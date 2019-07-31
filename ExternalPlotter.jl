@@ -50,9 +50,9 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
         end
         timesteps = parse(Int64,readlines(datafile)[end-2])
         timeTaken = parse(Float64,readlines(datafile)[end-1])
-    
+        stability = parse(Float64,readlines(datafile)[end-5])
         page = readlines(datafile)
-        for i in 2:length(page)-5
+        for i in 2:length(page)-6
             thisArray = parse.(Float64,split(page[i],","))
             push!(Elist, thisArray[1])
             push!(L1list, thisArray[2])
@@ -95,15 +95,14 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
         end
         #=stability calculation=#
         println("\n")
-        if E₁list[end]>0
-            stability = 0
-            println("This is an unstable system.")
-        elseif E₂list[end]>0
-            stability = 0.5
-            println("This is a partially unstable system.")
-        else
-            stability = 1
+        if stability == 1.0
             println("This is a stable system.")
+        elseif stability == 0.5
+            println("This is a partially stable system.")
+        elseif stability == 0.0
+            println("This is an unstable system.")
+        else
+            error("There was a stability error! ;(")
         end
         println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
         println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
@@ -148,7 +147,6 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
         else
             if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
                 plt.plot(X1,Y1,linestyle="solid",color="red")
-                return "safe"
                 plt.plot(X2,Y2,linestyle="solid",color=color)
                 plt.plot(X3,Y3,linestyle="solid",color="green")
                 if numBodies == 4

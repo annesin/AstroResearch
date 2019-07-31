@@ -144,9 +144,6 @@ function System(file, fileSave, MemorySave=true)
 	L₂Y = (m[1]+m[2])*(CM₁₂Z*VINCMX-CM₁₂X*VINCMZ)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
 	L₂Z = (m[1]+m[2])*(CM₁₂X*VINCMY-CM₁₂Y*VINCMX)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
 
-	E₁Stability = E₁
-	E₂Stability = E₂ #these will be used as absolute energies (not deviations) because we need to determine the stability of the system at the end
-
 	t0 = 0.0
 
 	Lmax, LmaxX, LmaxY, LmaxZ, Lmin, LminX, LminY, LminZ, Emax, Emin, E₁max, E₁min, E₂max, E₂min, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₁min, L₁minX, L₁minY, L₁minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, L₂min, L₂minX, L₂minY, L₂minZ = zeros(30) #all these extrema are deviations from the original measurement, so they're all originally zero
@@ -250,12 +247,13 @@ function System(file, fileSave, MemorySave=true)
 		stepSave = 1
 	end
 	prog = Progress(convert(Int,ceil(t)),0.5)
+	stability = 1.5
 	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
 		write(datafile,"$(convert(Int64,numBodies))","\n")
 		if numBodies == 3 
-			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[3]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n") #all the zeros are due to there being 0 deviation from the initial calculation,  by definition
+			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n") #all the zeros are due to there being 0 deviation from the initial calculation,  by definition
 		else
-			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[3]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
+			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
 		end
 		firstTime = time()
 		while t0 < t
@@ -286,8 +284,14 @@ function System(file, fileSave, MemorySave=true)
 			LX = m[1]*(R₁Y*V₁Z-R₁Z*V₁Y)+m[2]*(R₂Y*V₂Z-R₂Z*V₂Y)+m[3]*(R₃Y*V₃Z-R₃Z*V₃Y)
 			LY = m[1]*(R₁Z*V₁X-R₁X*V₁Z)+m[2]*(R₂Z*V₂X-R₂X*V₂Z)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
 			LZ = m[1]*(R₁X*V₁Y-R₁Y*V₁X)+m[2]*(R₂X*V₂Y-R₂Y*V₂X)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
+			L = sqrt(LX^2+LY^2+LZ^2)
+			L = (L-L0)/L0
 			t0 = t0 + h #advances time
-			if counter%stepSave == 0 || sqrt(LX^2+LY^2+LZ^2) > Lmax || sqrt(LX^2+LY^2+LZ^2) < Lmin || E > Emax || E < Emin || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max || sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min || sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max || sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min
+			if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max || sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min || sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max || sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min
+				#println([counter%stepSave==0,L>Lmax,L<Lmin,E>Emax,E<Emin,h>lmax,h<lmin,E₁>E₁max,E₁<E₁min,E₂>E₂max,E₂<E₂min,sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max,sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min,sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max,sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min])
+				LX = (LX-LX0)/LX0
+				LY = (LY-LY0)/LY0
+				LZ = (LZ-LZ0)/LZ0
 				VINCMX = (m[2]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
 				VINCMY = (m[2]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
 				VINCMZ = (m[2]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
@@ -296,8 +300,6 @@ function System(file, fileSave, MemorySave=true)
 				CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
 				E₁ = .5*m[1]*sqrt((V₁X-VINCMX)^2+(V₁Y-VINCMY)^2+(V₁Z-VINCMZ)^2)^2+.5*m[2]*sqrt((V₂X-VINCMX)^2+(V₂Y-VINCMY)^2+(V₂Z-VINCMZ)^2)^2 - G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)#Energy of inner binary
 				E₂ = .5*(m[1]+m[2])*sqrt(VINCMX^2+VINCMY^2+VINCMZ^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 - G*(m[1]+m[2])*m[3]/sqrt((R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2)#Energy of outer binary we don't normalize these now because we need to determine stability of the system
-				E₁Stability = E₁
-				E₂Stability = E₂
 				E₁ = (E₁-E₁0)/E₁0
 				E₂ = (E₂-E₂0)/E₂0
 				L₁X = m[1]*((R₁Y-CM₁₂Y)*(V₁Z-VINCMZ)-(R₁Z-CM₁₂Z)*(V₁Y-VINCMY))+m[2]*((R₂Y-CM₁₂Y)*(V₂Z-VINCMZ)-(R₂Z-CM₁₂Z)*(V₂Y-VINCMY))
@@ -306,8 +308,6 @@ function System(file, fileSave, MemorySave=true)
 				L₂X = (m[1]+m[2])*(CM₁₂Y*VINCMZ-CM₁₂Z*VINCMY)+m[3]*(R₃Y*V₃Z-R₃Z*V₃Y)
 				L₂Y = (m[1]+m[2])*(CM₁₂Z*VINCMX-CM₁₂X*VINCMZ)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
 				L₂Z = (m[1]+m[2])*(CM₁₂X*VINCMY-CM₁₂Y*VINCMX)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
-				L = sqrt(LX^2+LY^2+LZ^2)
-				L = (L-L0)/L0
 				L₁ = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
 				L₁ = (L₁-L₁0)/L₁X0
 				L₂ = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
@@ -324,6 +324,7 @@ function System(file, fileSave, MemorySave=true)
 					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y), $L₂Z, $h, $t0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
 				end
 				if L > Lmax
+					#println([L,Lmax])
 					LmaxX = LX
 					LmaxY = LY
 					LmaxZ = LZ
@@ -402,21 +403,30 @@ function System(file, fileSave, MemorySave=true)
 			end
 			counter += 1
 		end
+		VINCMX = (m[2]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
+		VINCMY = (m[2]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
+		VINCMZ = (m[2]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
+		CM₁₂X = (M1*R₁X+M2*R₂X)/(M1+M2)
+		CM₁₂Y = (M1*R₁Y+M2*R₂Y)/(M1+M2)
+		CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
+		E₁ = .5*m[1]*sqrt((V₁X-VINCMX)^2+(V₁Y-VINCMY)^2+(V₁Z-VINCMZ)^2)^2+.5*m[2]*sqrt((V₂X-VINCMX)^2+(V₂Y-VINCMY)^2+(V₂Z-VINCMZ)^2)^2 - G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)#Energy of inner binary
+		E₂ = .5*(m[1]+m[2])*sqrt(VINCMX^2+VINCMY^2+VINCMZ^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 - G*(m[1]+m[2])*m[3]/sqrt((R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2)#Energy of outer binary we don't normalize these now because we need to determine stability of the system
+		if E₁>0
+			stability = 0
+			println("This is an unstable system.")
+		elseif E₂>0
+			stability = 0.5
+			println("This is a partially unstable system.")
+		else
+			stability = 1
+			println("This is a stable system.")
+		end
 		NowTime = time()
+		write(datafile,"$stability","\n")
 		write(datafile,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
 		write(datafile,"$counter","\n")
 		write(datafile,"$(NowTime-firstTime)","\n")
 		write(datafile,"N")
-	end
-	if E₁Stability>0
-		stability = 0
-		println("This is an unstable system.")
-	elseif E₂Stability>0
-		stability = 0.5
-		println("This is a partially unstable system.")
-	else
-		stability = 1
-		println("This is a stable system.")
 	end
 	return hParam, t0, periods, counter, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁min, E₁max, E₂min, E₂max, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax
 end
