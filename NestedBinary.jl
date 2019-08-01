@@ -198,7 +198,7 @@ function System(file, fileSave, MemorySave=true)
 	if MemorySave
 		while t0 < Iperiod
 			x = RK4(f, x, m, h)
-			R₁₂X = x[1]-x[7]
+			R₁₂X = x[1]-x[7] #no real need to define the actual R's and V's here, since we're only looking at calculating h
 			R₁₂Y = x[2]-x[8]
 			R₁₂Z = x[3]-x[9]
 			R₁₃X = x[1]-x[13]
@@ -259,24 +259,42 @@ function System(file, fileSave, MemorySave=true)
 		while t0 < t
 			#we will add an adaptive timestep later
 			x = RK4(f, x, m, h)
-			R₁₂X = x[1]-x[7]
-			R₁₂Y = x[2]-x[8]
-			R₁₂Z = x[3]-x[9]
-			R₁₃X = x[1]-x[13]
-			R₁₃Y = x[2]-x[14]
-			R₁₃Z = x[3]-x[15]
-			R₂₃X = x[7]-x[13]
-			R₂₃Y = x[8]-x[14]
-			R₂₃Z = x[9]-x[15]
-			V₁₂X = x[4]-x[10]
-			V₁₂Y = x[5]-x[11]
-			V₁₂Z = x[6]-x[12]
-			V₁₃X = x[4]-x[16]
-			V₁₃Y = x[5]-x[17] 
-			V₁₃Z = x[6]-x[18]
-			V₂₃X = x[10]-x[16]
-			V₂₃Y = x[11]-x[17] 
-			V₂₃Z = x[12]-x[18]
+			R₁X = x[1]
+			R₁Y = x[2]
+			R₁Z = x[3]
+			V₁X = x[4]
+			V₁Y = x[5]
+			V₁Z = x[6]
+			R₂X = x[7]
+			R₂Y = x[8]
+			R₂Z = x[9]
+			V₂X = x[10]
+			V₂Y = x[11]
+			V₂Z = x[12]
+			R₃X = x[13]
+			R₃Y = x[14]
+			R₃Z = x[15]
+			V₃X = x[16]
+			V₃Y = x[17]
+			V₃Z = x[18]
+			R₁₂X = R₁X-R₂X
+			R₁₂Y = R₁Y-R₂Y
+			R₁₂Z = R₁Z-R₂Z
+			R₁₃X = R₁X-R₃X
+			R₁₃Y = R₁Y-R₃Y
+			R₁₃Z = R₁Z-R₃Z
+			R₂₃X = R₂X-R₃X
+			R₂₃Y = R₂Y-R₃Y
+			R₂₃Z = R₂Z-R₃Z
+			V₁₂X = V₁X-V₂X
+			V₁₂Y = V₁Y-V₂Y
+			V₁₂Z = V₁Z-V₂Z
+			V₁₃X = V₁X-V₃X
+			V₁₃Y = V₁Y-V₃Y 
+			V₁₃Z = V₁Z-V₃Z
+			V₂₃X = V₂X-V₃X
+			V₂₃Y = V₂Y-V₃Y 
+			V₂₃Z = V₂Z-V₃Z
 			K = .5*m[1]*(V₁X^2+V₁Y^2+V₁Z^2)+.5*m[2]*(V₂X^2+V₂Y^2+V₂Z^2)+.5*m[3]*(V₃X^2+V₃Y^2+V₃Z^2) #overall kinetic energy
 			U = -(G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)+G*m[1]*m[3]/sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)+G*m[2]*m[3]/sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)) #total gravitational potential energy
 			E = K + U #total energy 
@@ -286,8 +304,40 @@ function System(file, fileSave, MemorySave=true)
 			LZ = m[1]*(R₁X*V₁Y-R₁Y*V₁X)+m[2]*(R₂X*V₂Y-R₂Y*V₂X)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
 			L = sqrt(LX^2+LY^2+LZ^2)
 			L = (L-L0)/L0
+			if L > Lmax
+				LmaxX = LX
+				LmaxY = LY
+				LmaxZ = LZ
+				Lmax = L
+			elseif L < Lmin
+				LminX = LX
+				LminY = LY
+				LminZ = LZ #!!do this component wise
+				Lmin = L
+			end
+			if E > Emax
+				Emax = E
+			elseif E < Emin
+				Emin = E
+			end
 			t0 = t0 + h #advances time
-			if counter%stepSave == 0 || L > Lmax || L < Lmin || E > Emax || E < Emin || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max || sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min || sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max || sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min
+			h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
+			h2 = sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
+			h3 = sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
+			if h1 < h2
+				if h1 < h3
+					h = hParam*h1
+				else
+					h = hParam*h3
+				end
+			else
+				if h2 < h3
+					h = hParam*h2
+				else
+					h = hParam*h3
+				end
+			end #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+			if counter%stepSave == 0 || L > 10^-3 || L < -10^-3 || E > 10^-3 || E < -10^-3 || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min 
 				#println([counter%stepSave==0,L>Lmax,L<Lmin,E>Emax,E<Emin,h>lmax,h<lmin,E₁>E₁max,E₁<E₁min,E₂>E₂max,E₂<E₂min,sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max,sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min,sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max,sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min])
 				LX = (LX-LX0)/LX0
 				LY = (LY-LY0)/LY0
@@ -319,26 +369,9 @@ function System(file, fileSave, MemorySave=true)
 				L₂Y = (L₂Y-L₂Y0)/L₂Y0
 				L₂Z = (L₂Z-L₂Z0)/L₂Z0
 				if numBodies == 3 
-					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n")
+					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃Z, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z","\n")
 				else
-					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y), $L₂Z, $h, $t0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
-				end
-				if L > Lmax
-					#println([L,Lmax])
-					LmaxX = LX
-					LmaxY = LY
-					LmaxZ = LZ
-					Lmax = L
-				elseif L < Lmin
-					LminX = LX
-					LminY = LY
-					LminZ = LZ #!!do this component wise
-					Lmin = L
-				end
-				if E > Emax
-					Emax = E
-				elseif E < Emin
-					Emin = E
+					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃Z, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z, $(x[19]), $(x[20]), $(x[21])","\n")
 				end
 				if h > lmax
 					lmax = h
@@ -371,29 +404,13 @@ function System(file, fileSave, MemorySave=true)
 					L₂maxY = L₂Y
 					L₂maxZ = L₂Z
 					L₂max = L₂
-				elseif L₂ < L₂min
-					L₂minX = L₂X
+				elseif L₂ < L₂min #!!print simulated time at the end "days later..."
+					L₂minX = L₂X #!!should probably get rid of these fake angular momenta
 					L₂minY = L₂Y
 					L₂minZ = L₂Z 
 					L₂min = L₂ #!!change excel input cause of this
 				end
 			end
-			h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
-			h2 = sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
-			h3 = sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
-			if h1 < h2
-				if h1 < h3
-					h = hParam*h1
-				else
-					h = hParam*h3
-				end
-			else
-				if h2 < h3
-					h = hParam*h2
-				else
-					h = hParam*h3
-				end
-			end #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 			#=h1 = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
 			if h != h1
 				println([h1,h])
