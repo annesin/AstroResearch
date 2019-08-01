@@ -65,7 +65,7 @@ function System(file, fileSave, MemorySave=true)
 
 	X1 = (-(A1*M2)/(M1+M2))-cosd(Θ)*cosd(i)*A2*(M3/M) #keeps track of the first body's x coordinate
 	X2 = ((M1*A1)/(M1 + M2))-cosd(Θ)*cosd(i)*A2*(M3/M) #similar for these
-	X3 = cosd(Θ)*A2*cosd(i)*(M1+M2)/M #!!these don't need to arrays anymore, just updated
+	X3 = cosd(Θ)*A2*cosd(i)*(M1+M2)/M 
 	Y1 = -sind(Θ)*cosd(i)*A2*(M3/M)
 	Y2 = -sind(Θ)*cosd(i)*A2*(M3/M)
 	Y3 = sind(Θ)*A2*cosd(i)*(M1+M2)/M
@@ -312,7 +312,7 @@ function System(file, fileSave, MemorySave=true)
 			elseif L < Lmin
 				LminX = LX
 				LminY = LY
-				LminZ = LZ #!!do this component wise
+				LminZ = LZ 
 				Lmin = L
 			end
 			if E > Emax
@@ -369,9 +369,9 @@ function System(file, fileSave, MemorySave=true)
 				L₂Y = (L₂Y-L₂Y0)/L₂Y0
 				L₂Z = (L₂Z-L₂Z0)/L₂Z0
 				if numBodies == 3 
-					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃Z, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z","\n")
+					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃X, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z","\n")
 				else
-					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃Z, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z, $(x[19]), $(x[20]), $(x[21])","\n")
+					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃X, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z, $(x[19]), $(x[20]), $(x[21])","\n")
 				end
 				if h > lmax
 					lmax = h
@@ -388,7 +388,7 @@ function System(file, fileSave, MemorySave=true)
 				elseif E₂ < E₂min
 					E₂min = E₂
 				end
-				if L₁ > L₁max #!!test stability at the end
+				if L₁ > L₁max 
 					L₁maxX = L₁X
 					L₁maxY = L₁Y
 					L₁maxZ = L₁Z
@@ -404,11 +404,11 @@ function System(file, fileSave, MemorySave=true)
 					L₂maxY = L₂Y
 					L₂maxZ = L₂Z
 					L₂max = L₂
-				elseif L₂ < L₂min #!!print simulated time at the end "days later..."
-					L₂minX = L₂X #!!should probably get rid of these fake angular momenta
+				elseif L₂ < L₂min 
+					L₂minX = L₂X 
 					L₂minY = L₂Y
 					L₂minZ = L₂Z 
-					L₂min = L₂ #!!change excel input cause of this
+					L₂min = L₂ 
 				end
 			end
 			#=h1 = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
@@ -439,6 +439,7 @@ function System(file, fileSave, MemorySave=true)
 			println("This is a stable system.")
 		end
 		NowTime = time()
+		write(datafile,"$t0","\n")
 		write(datafile,"$stability","\n")
 		write(datafile,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
 		write(datafile,"$counter","\n")
@@ -506,6 +507,7 @@ function Master(file, fileSave="AutoSave", writeData=0, MemorySave=true) #plotti
 	timeTaken = parse(Float64,readlines(datafile)[end-1])
 	#=stability calculation=#
 	println("\n")
+	println("$t0 days later...")
 	println("The timestep varied from $lmin to $lmax.")
 	println("The angular momentum varied by $((Lmin)) to $((Lmax)) while the energy varied by $Emin to $Emax.") #magnitude of angular momentum here for simplicity
 	println("This ran in $timeTaken seconds.")

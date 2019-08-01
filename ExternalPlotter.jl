@@ -51,8 +51,9 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
         timesteps = parse(Int64,readlines(datafile)[end-2])
         timeTaken = parse(Float64,readlines(datafile)[end-1])
         stability = parse(Float64,readlines(datafile)[end-5])
+        t0 = parse(Float64,readlines(datafile)[end-6])
         page = readlines(datafile)
-        for i in 2:length(page)-6
+        for i in 2:length(page)-7
             thisArray = parse.(Float64,split(page[i],","))
             push!(Elist, thisArray[1])
             push!(L1list, thisArray[2])
@@ -104,6 +105,7 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
         else
             error("There was a stability error! ;(")
         end
+        println("$t0 days later...")
         println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
         println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).") #magnitude of angular momentum here for simplicity
         println("This ran in $timeTaken seconds.")
