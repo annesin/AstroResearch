@@ -19,7 +19,7 @@ function do_work(fileSave) #this function takes a job from the jobs channel and 
 		write(x,"100P,$hParam")
         close(x)
         println("The parameters here are [$(Masses[convert(Int64,job_id[1])])] masses, $(10^(job_id[2])) and $(-job_id[4]+11) seperations, and $(Eccentricities[convert(Int64,job_id[3])]) eccentricity.") #prints what parameters we're running
-        record, rowNumber = Plot("Test_$job_id"*".txt", "none", "$fileSave"*"_$job_id.txt") #This, finally, runs the simulation. It also records what row Excel is saving the data to (or if its saving at all)
+        record, rowNumber = Master("Test_$job_id"*".txt", "none", "$fileSave"*"_$job_id.txt") #This, finally, runs the simulation. It also records what row Excel is saving the data to (or if its saving at all)
 		rm("Test_$job_id"*".txt") #deletes the input file
 		if record
 			mv("h≈(r÷v) data files/$fileSave"*"_$job_id.txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true) #if data was recorded in spreadsheet, it renames the .txt file to the corresponding row number
