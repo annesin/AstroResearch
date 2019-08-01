@@ -56,7 +56,7 @@ end
 
 function make_jobs_test(num)
     for i in 1:num
-        put!(jobs,[1,0,1,1])
+        put!(jobs,[1,0,1,1,i])
     end
     close(jobs)
 end
@@ -65,7 +65,7 @@ end
 function SpeedTest(a=1,b=0,c=1,d=1,fileSave="AutoSave") #!! I would keep this change
     testTime = time()
     #numCores = length(Sys.cpu_info()) #this isn't really the number of cores, but the number of parallel processes avaliable. It varies by machine.
-    numCores = 1
+    numCores = a
     make_jobs_test(numCores) #loops through and makes jobs from the parameter space we give it
     println("Running with $numCores cores...")
     @sync for i in 1:numCores # start n tasks to process requests in parallel
