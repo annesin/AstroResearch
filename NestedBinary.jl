@@ -529,7 +529,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 	record = true
 	rowNumber = 0
 	if writeData == 0
-		XLSX.openxlsx("NestedBinaryData.xlsm",mode="rw") do xf
+		XLSX.openxlsx("NestedBinaryData.xlsx",mode="rw") do xf
 			sheet = xf[1]
 			i = 1
 			while typeof(sheet["A$i"]) != Missing #gets next blank row
