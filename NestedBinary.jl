@@ -45,7 +45,7 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
-function System(file, fileSave, MemorySave=true)
+function System(file, fileSave, Break, MemorySave=true)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, numBodies, periods = fileInput(file) #gets info from file
 
@@ -55,6 +55,7 @@ function System(file, fileSave, MemorySave=true)
 	M2 = m[2]
 	M3 = m[3]
 	M = M1+M2+M3
+	q = (M1+M2)/M3
 
 	A1 = x[1]
 	A2 = x[3]
@@ -350,6 +351,19 @@ function System(file, fileSave, MemorySave=true)
 				CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
 				E₁ = .5*m[1]*sqrt((V₁X-VINCMX)^2+(V₁Y-VINCMY)^2+(V₁Z-VINCMZ)^2)^2+.5*m[2]*sqrt((V₂X-VINCMX)^2+(V₂Y-VINCMY)^2+(V₂Z-VINCMZ)^2)^2 - G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)#Energy of inner binary
 				E₂ = .5*(m[1]+m[2])*sqrt(VINCMX^2+VINCMY^2+VINCMZ^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 - G*(m[1]+m[2])*m[3]/sqrt((R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2)#Energy of outer binary we don't normalize these now because we need to determine stability of the system
+				if Break
+					if E₁>0
+						stability = 0
+						println("This is an unstable system.")
+						break
+					elseif E₂>0
+						stability = 0.5
+						println("This is a partially unstable system.")
+						break
+					else
+						stability = 1
+					end
+				end
 				E₁ = (E₁-E₁0)/E₁0
 				E₂ = (E₂-E₂0)/E₂0
 				L₁X = m[1]*((R₁Y-CM₁₂Y)*(V₁Z-VINCMZ)-(R₁Z-CM₁₂Z)*(V₁Y-VINCMY))+m[2]*((R₂Y-CM₁₂Y)*(V₂Z-VINCMZ)-(R₂Z-CM₁₂Z)*(V₂Y-VINCMY))
@@ -497,9 +511,9 @@ fileSave is optional. However, if a string is entered, for example, "Sample.txt"
 
 equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
 """
-function Master(file, fileSave="AutoSave", writeData=0, MemorySave=true) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=true) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	#Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, fileSave, MemorySave)
-	hParam, t0, periods, timesteps, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁min, E₁max, E₂min, E₂max, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax = System(file, fileSave, MemorySave)
+	hParam, t0, periods, timesteps, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁min, E₁max, E₂min, E₂max, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax = System(file, fileSave, Break, MemorySave)
 	datafile = "h≈(r÷v) data files/$fileSave"*".txt"
 	m = parse.(Float64,split(readlines(datafile)[end-4],",")) #keep
 	OriginalX = parse.(Float64,split(readlines(datafile)[end-3],",")) #keep
