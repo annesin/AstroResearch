@@ -55,7 +55,7 @@ function System(file, fileSave, Break, MemorySave=true)
 	M2 = m[2]
 	M3 = m[3]
 	M = M1+M2+M3
-	q = (M1+M2)/M3
+	q = (M1+M2)/M
 
 	A1 = x[1]
 	A2 = x[3]
@@ -91,6 +91,7 @@ function System(file, fileSave, Break, MemorySave=true)
 	CM₁₂X = (M1*R₁X+M2*R₂X)/(M1+M2)
 	CM₁₂Y = (M1*R₁Y+M2*R₂Y)/(M1+M2)
 	CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
+	InitialSep = sqrt((CM₁₂X-R₃X)^2+(CM₁₂Y-R₃Y)^2+(CM₁₂Z-R₃Z)^2)
 	R₁₂X = R₁X-R₂X
 	R₁₂Y = R₁Y-R₂Y
 	R₁₂Z = R₁Z-R₂Z
@@ -351,19 +352,6 @@ function System(file, fileSave, Break, MemorySave=true)
 				CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
 				E₁ = .5*m[1]*sqrt((V₁X-VINCMX)^2+(V₁Y-VINCMY)^2+(V₁Z-VINCMZ)^2)^2+.5*m[2]*sqrt((V₂X-VINCMX)^2+(V₂Y-VINCMY)^2+(V₂Z-VINCMZ)^2)^2 - G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)#Energy of inner binary
 				E₂ = .5*(m[1]+m[2])*sqrt(VINCMX^2+VINCMY^2+VINCMZ^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 - G*(m[1]+m[2])*m[3]/sqrt((R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2)#Energy of outer binary we don't normalize these now because we need to determine stability of the system
-				if Break
-					if E₁>0
-						stability = 0
-						println("This is an unstable system.")
-						break
-					elseif E₂>0
-						stability = 0.5
-						println("This is a partially unstable system.")
-						break
-					else
-						stability = 1
-					end
-				end
 				E₁ = (E₁-E₁0)/E₁0
 				E₂ = (E₂-E₂0)/E₂0
 				L₁X = m[1]*((R₁Y-CM₁₂Y)*(V₁Z-VINCMZ)-(R₁Z-CM₁₂Z)*(V₁Y-VINCMY))+m[2]*((R₂Y-CM₁₂Y)*(V₂Z-VINCMZ)-(R₂Z-CM₁₂Z)*(V₂Y-VINCMY))
@@ -382,6 +370,11 @@ function System(file, fileSave, Break, MemorySave=true)
 				L₂X = (L₂X-L₂X0)/L₂X0
 				L₂Y = (L₂Y-L₂Y0)/L₂Y0
 				L₂Z = (L₂Z-L₂Z0)/L₂Z0
+				if Break
+					if sqrt((CM₁₂X-R₃X)^2+(CM₁₂X-R₃X)^2+(CM₁₂X-R₃X)^2)>2*InitialSep
+						break
+					end
+				end
 				if numBodies == 3 
 					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃X, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z","\n")
 				else
@@ -434,23 +427,13 @@ function System(file, fileSave, Break, MemorySave=true)
 			end
 			counter += 1
 		end
-		VINCMX = (m[2]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
-		VINCMY = (m[2]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
-		VINCMZ = (m[2]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
-		CM₁₂X = (M1*R₁X+M2*R₂X)/(M1+M2)
-		CM₁₂Y = (M1*R₁Y+M2*R₂Y)/(M1+M2)
-		CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
-		E₁ = .5*m[1]*sqrt((V₁X-VINCMX)^2+(V₁Y-VINCMY)^2+(V₁Z-VINCMZ)^2)^2+.5*m[2]*sqrt((V₂X-VINCMX)^2+(V₂Y-VINCMY)^2+(V₂Z-VINCMZ)^2)^2 - G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)#Energy of inner binary
-		E₂ = .5*(m[1]+m[2])*sqrt(VINCMX^2+VINCMY^2+VINCMZ^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 - G*(m[1]+m[2])*m[3]/sqrt((R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2+(R₃X-CM₁₂X)^2)#Energy of outer binary we don't normalize these now because we need to determine stability of the system
-		if E₁>0
+		println("\n")
+		if sqrt((CM₁₂X-R₃X)^2+(CM₁₂X-R₃X)^2+(CM₁₂X-R₃X)^2)>2*InitialSep
+			println("This is an unstable system!")
 			stability = 0
-			println("This is an unstable system.")
-		elseif E₂>0
-			stability = 0.5
-			println("This is a partially unstable system.")
 		else
+			println("This is a stable system!")
 			stability = 1
-			println("This is a stable system.")
 		end
 		NowTime = time()
 		write(datafile,"$t0","\n")
@@ -478,7 +461,7 @@ function RK4(f,x,m,h)
 #calculating the runge kutta parameters for every function in f
 
 	for i in 1:d
-		k1[i]=h*f[i](x, m,)
+		k1[i]=h*f[i](x, m)
 	end
 	for i in 1:d
 		k2[i]=h*f[i](x+k1/2, m)
@@ -575,7 +558,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 			end
 		end
 	end
-	return record, rowNumber #used for autotester
+	return record, rowNumber, stability #used for autotester
 end
 
 function f0(x::Array{Float64,1}) #DE for Masses
