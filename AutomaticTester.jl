@@ -33,23 +33,27 @@ function StabilityFinder(m, a1, fileSave="AutoSave",t="100P", hParam=0.01)
             end
         end
     end
-    XLSX.openxlsx("NestedBinaryData.xlsx",mode="rw") do xf #then we save in this nifty spreadsheet
+    XLSX.openxlsx("StabilityConditions.xlsx",mode="rw") do xf #then we save in this nifty spreadsheet
         sheet = xf[1]
         i = 1
+        record = true
         while typeof(sheet["A$i"]) != Missing #gets next blank row
             if [sheet["A$i"],sheet["B$i"],sheet["C$i"],sheet["D$i"],sheet["F$i"],sheet["G$i"]] == [m[1],m[2],m[3],a1,t,hParam]
                 println("Not saving to spreadsheet: This data already has an entry at line $i.")
+                record = false
             end
             i += 1
         end
         rowNumber = i
-        sheet["A$i"] = m[1]
-        sheet["B$i"] = m[2]
-        sheet["C$i"] = m[3]
-        sheet["D$i"] = a1
-        sheet["E$i"] = round(a2 + 10.0^(-(sizeStep-1));digits=4)
-        sheet["F$i"] = t
-        sheet["G$i"] = hParam
+        if record
+            sheet["A$i"] = m[1]
+            sheet["B$i"] = m[2]
+            sheet["C$i"] = m[3]
+            sheet["D$i"] = a1
+            sheet["E$i"] = round(a2 + 10.0^(-(sizeStep-1));digits=4)
+            sheet["F$i"] = t
+            sheet["G$i"] = hParam
+        end
     end
     return round(a2 + 10.0^(-(sizeStep-1));digits=4)  #returns smallest a2 that is stable
 end
