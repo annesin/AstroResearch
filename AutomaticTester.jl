@@ -1,6 +1,6 @@
 include("NestedBinary.jl") 
 
-function StabilityFinder(m, a1, fileSave="AutoSave",t="100P", hParam=0.01)
+function StabilityFinder(m, a1, t="100P", hParam=0.01, fileSave="AutoSave")
     #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation
     a2=a1*2 #we'll begin with the outer separation being twice as large as the inner separation
     stability = 0 
