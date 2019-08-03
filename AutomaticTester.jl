@@ -1,8 +1,8 @@
 include("NestedBinary.jl") 
 
 function StabilityFinder(m, a1, fileSave="AutoSave",t="100P", hParam=0.01)
-    #here, m is an stringed array of the masses while a1 is a Float64 that is the inner seperation
-    a2=a1*2 #we'll begin with the outer seperation being twice as large as the inner seperation
+    #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation
+    a2=a1*2 #we'll begin with the outer separation being twice as large as the inner separation
     stability = 0 
     sizeStep = 0 #this determines the amount we'll change a2 by with each test
     counter = 0 #this will help us test more cases, meaning that when a system is stable, we're more confident that we've stepped over that stability condition line
@@ -12,7 +12,7 @@ function StabilityFinder(m, a1, fileSave="AutoSave",t="100P", hParam=0.01)
         write(x,"$a1,0,$a2,0,0,0\n")
         write(x,"$t,$hParam")
         close(x)
-        println("The parameters here are masses $m, seperations $a1 and $a2, with zero eccentricity, inclination, or angular offset.")
+        println("The parameters here are masses $m, separations $a1 and $a2, with zero eccentricity, inclination, or angular offset.")
         record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
         rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
