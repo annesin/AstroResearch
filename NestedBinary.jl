@@ -61,8 +61,8 @@ function System(file, fileSave, Break, MemorySave=true)
 	A2 = x[3]
 	e1 = x[2]
 	e2 = x[4]
-	i = x[5]
-	Θ = x[6]
+	Θ = x[5]
+	i = x[6]
 
 	X1 = (-(A1*M2)/(M1+M2))-cosd(Θ)*cosd(i)*A2*(M3/M) #keeps track of the first body's x coordinate
 	X2 = ((M1*A1)/(M1 + M2))-cosd(Θ)*cosd(i)*A2*(M3/M) #similar for these
@@ -187,7 +187,7 @@ function System(file, fileSave, Break, MemorySave=true)
 	lmin = h
 
 	#calculates inner binary period
-	Iperiod = sqrt(4*pi^2*A1/(1+e1)/G*(M1+M2))
+	Iperiod = sqrt(4*pi^2*A1^3/(1+e1)/G*(M1+M2))
 
 	x=[X1,Y1,Z1,V₁X,V₁Y,V₁Z,X2,Y2,Z2,V₂X,V₂Y,V₂Z,X3,Y3,Z3,V₃X,V₃Y,V₃Z]
 	if numBodies>3
