@@ -1,6 +1,6 @@
 include("NestedBinary2.jl") 
 
-function StabilityFinder(m, a1, t="100P", hParam=0.01, fileSave="AutoSave")
+function StabilityFinder(m, a1, percent, t="100P", hParam=0.01, fileSave="AutoSave")
     #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation
     a2=a1*2 #we'll begin with the outer separation being twice as large as the inner separation
     stability = 0 
@@ -10,7 +10,7 @@ function StabilityFinder(m, a1, t="100P", hParam=0.01, fileSave="AutoSave")
         x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
         write(x,"$m"[2:end-1],"\n")
         write(x,"$a1,0,$a2,0,0,0\n")
-        write(x,"$t,$hParam")
+        write(x,"$t,$hParam, $percent")
         close(x)
         println("The parameters here are masses $m, separations $a1 and $a2, with zero eccentricity, inclination, or angular offset.")
         record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
