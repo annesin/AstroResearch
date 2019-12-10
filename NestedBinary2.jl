@@ -41,13 +41,14 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 		notPeriods = true
 	end
 	hParam = parse.(Float64,split(readlines(file)[3],",")[2]) #these should be the elements of the third line of the .txt file
-	return fArray, XArray, mArray, t, hParam, numBodies, notPeriods
+	percent = parse.(Float64,split(readlines(file)[3],",")[3])
+	return fArray, XArray, mArray, t, hParam, percent, numBodies, notPeriods
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
 function System(file, fileSave, Break, MemorySave=true)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
-	f, x, m, t, hParam, numBodies, periods = fileInput(file) #gets info from file
+	f, x, m, t, hParam, percent, numBodies, periods = fileInput(file) #gets info from file
 
 	OriginalX = x
 
@@ -424,7 +425,7 @@ function System(file, fileSave, Break, MemorySave=true)
 			counter += 1
 		end
 		println("\n")
-		if abs(L₂min) > 1.04*abs(L₂0) ||  1.04*abs(L₂0) < abs(L₂max)
+		if abs(L₂min) > (1.0 + 0.01*percent)*abs(L₂0) ||  (1.0 + 0.01*percent)*abs(L₂0) < abs(L₂max)
 			println("This is an unstable system!")
 			stability = 0
 		else
