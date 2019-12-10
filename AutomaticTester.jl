@@ -6,7 +6,7 @@ function StabilityFinder(m, a1, percent, t="100P", hParam=0.01, fileSave="AutoSa
     stability = 0 
     sizeStep = 0 #this determines the amount we'll change a2 by with each test
     counter = 0 #this will help us test more cases, meaning that when a system is stable, we're more confident that we've stepped over that stability condition line
-    while sizeStep < 5 #once this is sufficiently small, we stop the simulation, since our 
+    while sizeStep < 3 #This line indicates the number of significant figures that will be evaluated. The higher, the longer the runtime
         x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
         write(x,"$m"[2:end-1],"\n")
         write(x,"$a1,0,$a2,0,0,0\n")
@@ -50,7 +50,7 @@ function StabilityFinder(m, a1, percent, t="100P", hParam=0.01, fileSave="AutoSa
             sheet["B$i"] = m[2]
             sheet["C$i"] = m[3]
             sheet["D$i"] = a1
-            sheet["E$i"] = round(a2 + 10.0^(-(sizeStep-1));digits=4)
+            sheet["E$i"] = round(a2 + 10.0^(-(sizeStep-1));digits=2)
             sheet["F$i"] = t
             sheet["G$i"] = hParam
         end
