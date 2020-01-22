@@ -428,6 +428,15 @@ function System(file, fileSave, Break, MemorySave=true)
 		if abs(L₂min) > (1.0 + 0.01*percent)*abs(L₂0) ||  (1.0 + 0.01*percent)*abs(L₂0) < abs(L₂max)
 			println("This is an unstable system!")
 			stability = 0
+		elseif abs(L₁min) > (1.0 + 0.01*percent)*abs(L₁0) ||  (1.0 + 0.01*percent)*abs(L₁0) < abs(L₁max)
+			println("This is an unstable system!")
+			stability = 0
+		elseif abs(E₂min) > (1.0 + 0.01*percent)*abs(E₂0) ||  (1.0 + 0.01*percent)*abs(E₂0) < abs(E₂max)
+			println("This is an unstable system!")
+			stability = 0
+		elseif abs(E₁min) > (1.0 + 0.01*percent)*abs(E₁0) ||  (1.0 + 0.01*percent)*abs(E₁0) < abs(E₁max)
+			println("This is an unstable system!")
+			stability = 0
 		else
 			println("This is a stable system!")
 			stability = 1
