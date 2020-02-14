@@ -1,12 +1,12 @@
-include("NestedBinary2.jl") 
+include("NestedBinaryFinal.jl") 
 
-function StabilityFinder(m, a1, percent, t="100P", hParam=0.01, fileSave="AutoSave")
+function StabilityFinder(m, a1, percent, t="1000P", hParam=0.01, fileSave="AutoSave")
     #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation
     a2=a1*2 #we'll begin with the outer separation being twice as large as the inner separation
     stability = 0 
     sizeStep = 0 #this determines the amount we'll change a2 by with each test
     counter = 0 #this will help us test more cases, meaning that when a system is stable, we're more confident that we've stepped over that stability condition line
-    while sizeStep < 3 #This line indicates the number of significant figures that will be evaluated. The higher, the longer the runtime
+    while sizeStep < 2 #This line indicates the number of significant figures that will be evaluated. The higher, the longer the runtime
         x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
         write(x,"$m"[2:end-1],"\n")
         write(x,"$a1,0,$a2,0,0,0\n")
