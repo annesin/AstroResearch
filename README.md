@@ -35,29 +35,7 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
   ```
   to simulate the system.
  
-## Stuff
-  
-  ```
-  Plot("Input.txt","blue")
-  ```
-  will yield the plot of the orbits. The color can be changed to any color recognized by matplotlib, and will be the color of one of the orbits.
-  
-  ```
-  julia> Plot("Input.txt","E")
-  
-  julia> Plot("Input.txt","L")
-  
-  julia> Plot("Input.txt","EL")
-  ```
-  will yield the energy vs. time plot, the angular momentum vs. time plot, or both on the same axes, respectively.
-  
-  ```
-  Plot("Input.txt","time")
-  ```
-  will yield the timestep vs. iteration plot.
-  
-  
-
+ 
 ## AutomaticTester.jl
 
   With `AutomaticTester.jl`, the `StabilityFinder` function takes in the masses and the inner binary separation of a desired nested binary configuration and returns the smallest such outer binary separation such that the system remains stable over the desired time period. This time period is defaulted to 100P of the inner binary. This can easily be adjusted by changing this value in the `AutomaticTester.jl` file and reloading the file.
@@ -67,7 +45,18 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
   ```
   Would return the the smallest stable outer binary separation for a system consisting of two 8 solar mass objects in the inner binary, a companion object of 1 solar mass, an inner binary separation of 7.2 solar radii and a desired conserved quantity drift of no more than 5 percent.
   
+ ## ThreeD.jl
 
+  `ThreeD.jl` is the three-dimensional version of `AutomaticTester.jl`. This program takes in the masses of the triple system, the separation of the inner binary, and the initial inclination of the third body relative to the plane of the inner binary. This program will then find the smallest stable separation of the outer binary over a desired time period and store this value in `StabilityConditions.xlsx`. Note: this desired time period is currently defaulting to 100P. This can be easily changed by altering `ThreeD.jl` and then recompiling the file.
+  
+  For example, after inlcuding this file if one inputs:
+  
+  ```
+  ThreeDSF([8,8,1], 7.2, 25)
+  ```
+  
+  the program will find the smallest separation necessary for a black hole binary system separated by 7.2 solar radii to be stable with a solar mass star angled at 25 degrees relative to the inner binary for 100P of the inner binary.
+  
 ## Autolooper.jl and AutoLooper2.jl
 
   These two programs are essentially versions of 'AutomaticTester.jl' with an additional loop. This loop is usefull in 
@@ -99,22 +88,7 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
 ## Calculations
 
   The equations we used, along with our derivations that we used in this program, are explained in `Equations.pdf`. The LaTeX file for `Equations.pdf` is also avaliable in `main.tex`.
-  
- ## ThreeD.jl
 
-  `ThreeD.jl` is the three-dimensional version of `AutomaticTester.jl`. This program takes in the masses of the triple system, the separation of the inner binary, and the initial inclination of the third body relative to the plane of the inner binary. This program will then find the smallest stable separation of the outer binary over a desired time period and store this value in `StabilityConditions.xlsx`. Note: this desired time period is currently defaulting to 100P. This can be easily changed by altering `ThreeD.jl` and then recompiling the file.
-  
-  For example, after inlcuding this file if one inputs:
-  
-  ```
-  ThreeDSF([8,8,1], 7.2, 25)
-  ```
-  
-  the program will find the smallest separation necessary for a black hole binary system separated by 7.2 solar radii to be stable with a solar mass star angled at 25 degrees relative to the inner binary for 100P of the inner binary.
-  
- ## Equations.pdf
-
-  The equations we used, along with our derivations that we used in this program, are explained in `Equations.pdf`. The LaTeX file for `Equations.pdf` is also avaliable in `main.tex`.
   
  ## Credits
  This code was produced for Prof. Ann Esin's summer research in astrophysics.
