@@ -1,5 +1,7 @@
 # AstroResearch
 
+NOTICE: This is old code that is being kept for reference. This is the old README file that went along with this code. 
+
 This program is designed to input a .txt file of parameters and create a triple system and a star. The program is used to simulate accretion of the star by the system.
 For just a binary system, use `systemrk.jl`. For more particles, use `Main.jl`. For a nested binary system, use `NestedBinary.jl`.
 
