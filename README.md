@@ -38,7 +38,9 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
  
 ## AutomaticTester.jl
 
-  With `AutomaticTester.jl`, the `StabilityFinder` function takes in the masses and the inner binary separation of a desired nested binary configuration and returns the smallest such outer binary separation such that the system remains stable over the desired time period. This time period is defaulted to 100P of the inner binary. This can easily be adjusted by changing this value in the `AutomaticTester.jl` file and reloading the file.
+  With `AutomaticTester.jl`, the `StabilityFinder` function takes in the masses and the inner binary separation of a desired nested binary configuration and returns the smallest such outer binary separation such that the system remains stable over the desired time period. This time period is defaulted to 100P of the inner binary. This can easily be adjusted by changing this value in the `AutomaticTester.jl` file and reloading the file. This program will also store the stable separation in `StabilityConditions.xlsx`.
+  
+  For example,
   
   ```
   StabilityFinder([8,8,1],7.2,5)
