@@ -1,13 +1,41 @@
 # AstroResearch
 
-This program is designed to input a .txt file of parameters and create a triple system and a star. The program is used to simulate accretion of the star by the system.
-For just a binary system, use `systemrk.jl`. For more particles, use `Main.jl`. For a nested binary system, use `NestedBinary.jl`.
+This program is designed to input a .txt file of parameters and create a triple system consisting of two compact objects and a star. The hope is that this program while eventually be used to simulate accretion from the star to the compact binary.
+
+To simulate a nested binary system, use `NestedBinary.jl`. To find stable systems over a desired time frame, use `AutomaticTester.jl` for systems in 2 dimensions or `ThreeD.jl` for systems in 3 dimensions. 
 
 Masses are in units of solar mass, distances are in the units of solar radii, and time is in the units of days.
 
 ## NestedBinaryFinal.jl
 
   With `NestedBinaryFinal.jl`, the `Master` function will simulate the evolution of a nested binary system of bodies over a desired time period. This function will also determine whether or not the inputed initial conditions are stable. 
+  
+  
+  ### The .txt file must be in the following format for NestedBinary.jl:
+
+  The elements are in three lines, each element being seperated by a comma:
+  1. The first line is the list of masses of the bodies.
+  2. The second line is the list of initial conditions: a₁, e₁, a₂, e₂, i, and Θ.
+     - a₁ and e₁ are the semi-major axis and eccentricity of the inner binary's orbit.
+     - a₂ and e₂ are the semi-major axis and eccentricity of the outer binary's orbit. 
+     - i is the inclination of the third body's orbit. It's measured from the plane formed by the inner binary.
+     - Θ is the angle between the line formed by the two inner bodies and the line formed from the inner binary's center of mass to the projection of the third body onto the above mentioned plane. It is also the longitude of the ascending node minus 270 degrees.
+  3. The third line consists of the time the simulation should run for and the timestep parameter. This line also includes the percent drift allowed of the consered quantities. That is, 5 here denotes that the conserved quantities are allowed to vary by at most 5%.
+
+  Example:
+  ```
+  8,8,1
+  2,0,20,0.99,0,0
+  10,0.0001, 5
+  ```
+  
+  Once a txt file has been created with the above information, simply call 
+  ```
+  Master(file.txt)
+  ```
+  to simulate the system.
+ 
+## Stuff
   
   ```
   Plot("Input.txt","blue")
@@ -29,22 +57,6 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
   will yield the timestep vs. iteration plot.
   
   
-
-### The .txt file must be in the following format for systemrk.jl:
-  
-  There are six elements in one line, each seperated by a comma:
-  1. Mass of the primary body
-  2. Mass of the secondary body
-  3. Semi-major axis of the system
-  4. Eccentricity
-  5. Time that the simulation runs for
-     - (if t=0, then the simulation will run for 100 periods)
-  6. Timestep parameter, which determines the length of the timestep the program uses
-  
-  Example (black hole-star system): 
-  ```
-  1,8,4.20984,0.2,0,0.001
-  ```
 
 ## AutomaticTester.jl
 
@@ -74,23 +86,6 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
   ```
   would produce a spreadsheet of simulations, whose .txt files would have the name `AutoRun_n.txt`.
 
-### The .txt file must be in the following format for NestedBinary.jl:
-
-  The elements are in three lines, each element being seperated by a comma:
-  1. The first line is the list of masses of the bodies.
-  2. The second line is the list of initial conditions: a₁, e₁, a₂, e₂, i, and Θ.
-     - a₁ and e₁ are the semi-major axis and eccentricity of the inner binary's orbit.
-     - a₂ and e₂ are the semi-major axis and eccentricity of the outer binary's orbit. 
-     - i is the inclination of the third body's orbit. It's measured from the plane formed by the inner binary.
-     - Θ is the angle between the line formed by the two inner bodies and the line formed from the inner binary's center of mass to the projection of the third body onto the above mentioned plane. It is also the longitude of the ascending node minus 270 degrees.
-  3. The third line consists of the time the simulation should run for and the timestep parameter (see above).
-
-  Example:
-  ```
-  8,8,1
-  2,0,20,0.99,0,0
-  10,0.0001
-  ```
   
 ## ExternalPlotter.jl
  
