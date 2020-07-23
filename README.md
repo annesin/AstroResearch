@@ -48,7 +48,7 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
 
 ## AutomaticTester.jl
 
-  With 'AutomaticTester.jl', the 'StabilityFinder' function takes in the masses and the inner binary separation of a desired nested binary configuration and returns the smallest such outer binary separation such that the system remains stable over the desired time period. This time period is defaulted to 100P of the inner binary. This can easily be adjusted by changing this value in the 'AutomaticTester.jl' file and reloading the file.
+  With `AutomaticTester.jl`, the `StabilityFinder` function takes in the masses and the inner binary separation of a desired nested binary configuration and returns the smallest such outer binary separation such that the system remains stable over the desired time period. This time period is defaulted to 100P of the inner binary. This can easily be adjusted by changing this value in the `AutomaticTester.jl` file and reloading the file.
   
   ```
   StabilityFinder([8,8,1],7.2,5)
@@ -107,7 +107,15 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
   
  ## ThreeD.jl
 
-  The equations we used, along with our derivations that we used in this program, are explained in `Equations.pdf`. The LaTeX file for `Equations.pdf` is also avaliable in `main.tex`.
+  `ThreeD.jl` is the three-dimensional version of `AutomaticTester.jl`. This program takes in the masses of the triple system, the separation of the inner binary, and the initial inclination of the third body relative to the plane of the inner binary. This program will then find the smallest stable separation of the outer binary over a desired time period and store this value in `StabilityConditions.xlsx`. Note: this desired time period is currently defaulting to 100P. This can be easily changed by altering `ThreeD.jl` and then recompiling the file.
+  
+  For example, after inlcuding this file if one inputs:
+  
+  ```
+  ThreeDSF([8,8,1], 7.2, 25)
+  ```
+  
+  the program will find the smallest separation necessary for a black hole binary system separated by 7.2 solar radii to be stable with a solar mass star angled at 25 degrees relative to the inner binary for 100P of the inner binary.
   
  ## Equations.pdf
 
