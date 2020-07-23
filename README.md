@@ -105,6 +105,14 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
 
   The equations we used, along with our derivations that we used in this program, are explained in `Equations.pdf`. The LaTeX file for `Equations.pdf` is also avaliable in `main.tex`.
   
+ ## ThreeD.jl
+
+  The equations we used, along with our derivations that we used in this program, are explained in `Equations.pdf`. The LaTeX file for `Equations.pdf` is also avaliable in `main.tex`.
+  
+ ## Equations.pdf
+
+  The equations we used, along with our derivations that we used in this program, are explained in `Equations.pdf`. The LaTeX file for `Equations.pdf` is also avaliable in `main.tex`.
+  
  ## Credits
  This code was produced for Prof. Ann Esin's summer research in astrophysics.
  This code was written by Brennen Quigley (@bquigley528) and Benjamin Khoury (@bbk001).
