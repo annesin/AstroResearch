@@ -59,22 +59,12 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
   
 ## Autolooper.jl and AutoLooper2.jl
 
-  These two programs are essentially versions of 'AutomaticTester.jl' with an additional loop. This loop is usefull in 
+  These two programs are essentially versions of 'AutomaticTester.jl' with an additional loop. This loop is usefull in evaluating numerous systems to explore the dependence of stability on various parameters.
   
-  `Plot` also has the option `"none"`, where nothing is plotted.
+  `Autolooper.jl` iterates the inner binary separations of a given system and will compile a list of stable outer binary separations in `StabilityConditions.xlsx`. 
+  `Autolooper2.jl` iterates the inner binary separations of a several systems and will also compile the stable outer binary separations in `StabilityConditions.xlsx`. 
   
-  `NestedBinary` also comes with the `AutomaticTester` function, which  simulates a variety of initial conditions that are typical of observed triple systems. It then saves the data in an Excel spreadsheet, as well as compressed .txt files for later graphing. The .txt files are in the format `Name_n.txt`, where `n` is the Excel row number where that simulation was recorded.
-  
-  ```
-  Plot("Input.txt","none","CoolOrbits.txt")
-  ```
-  would do the same thing as the above `Main` example.
-  
-  ```
-  AutomaticTester("AutoRun")
-  ```
-  would produce a spreadsheet of simulations, whose .txt files would have the name `AutoRun_n.txt`.
-
+  These functins can be modified easily to explore the dependence of stability on other quantities.
   
 ## ExternalPlotter.jl
  
