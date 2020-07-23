@@ -80,6 +80,13 @@ Masses are in units of solar mass, distances are in the units of solar radii, an
 ## Calculations
 
   The equations we used, along with our derivations that we used in this program, are explained in `Equations.pdf`. The LaTeX file for `Equations.pdf` is also avaliable in `main.tex`.
+  
+  ### StabilityConditions.jl
+  This consists of simple code that calculates the GR and accretion conditions necessary to have an accreting triple system. 
+  
+  `Differential(5, 2, 7.2, 0)` takes in a system consisting of a 5 and 2 solar mass objects in the inner binary separated by 7.2 solar radii and returns the amount of time before the paths of these objects starts changing significantly. NOTE; the equation here is in terms of semi major axis not separation. However, for systems with no eccentricity it remains accurate if separation is used.
+  
+  `lagrangian(3, 3, 1, 20)` evaluates the lagrange points of an otter binary consisting of a 6 solar mass object and a 1 solar mass object. 
 
   
  ## Credits
