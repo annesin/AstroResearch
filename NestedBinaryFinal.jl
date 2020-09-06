@@ -1,8 +1,8 @@
 using Pkg
-Pkg.clone("https://github.com/timholy/ProgressMeter.jl.git")
+Pkg.add(url="https://github.com/timholy/ProgressMeter.jl.git")
 Pkg.add("ProgressMeter")
 using ProgressMeter
-Pkg.clone("https://github.com/felipenoris/XLSX.jl.git")
+Pkg.add(url="https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add("XLSX")
 import XLSX
 
