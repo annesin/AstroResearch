@@ -1,6 +1,6 @@
 include("NestedBinaryFinal.jl") 
 
-function StabilityFinder(m, a1, percent, t="1000P", hParam=0.01, fileSave="AutoSave")
+function StabilityFinder(m, a1, percent, t="1000P", hParam=0.01, fileSave="AutoSave", writeData=0)
     #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation
     a2=a1*2 #we'll begin with the outer separation being twice as large as the inner separation
     stability = 0 
@@ -13,7 +13,7 @@ function StabilityFinder(m, a1, percent, t="1000P", hParam=0.01, fileSave="AutoS
         write(x,"$t,$hParam, $percent")
         close(x)
         println("The parameters here are masses $m, separations $a1 and $a2, with zero eccentricity, inclination, or angular offset.")
-        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
+        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])",writeData) #run simulation, get stability. Note that we're saving stuff for the heck of it
         rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
             mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
