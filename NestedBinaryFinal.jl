@@ -1,8 +1,8 @@
 using Pkg
-Pkg.clone("https://github.com/timholy/ProgressMeter.jl.git")
+Pkg.add(url="https://github.com/timholy/ProgressMeter.jl.git")
 Pkg.add("ProgressMeter")
 using ProgressMeter
-Pkg.clone("https://github.com/felipenoris/XLSX.jl.git")
+Pkg.add(url="https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add("XLSX")
 import XLSX
 
@@ -259,7 +259,7 @@ function System(file, fileSave, Break, MemorySave=true)
 	end
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	stability = 1.5
-	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
+	open("data_files/$fileSave"*".txt","w") do datafile
 		write(datafile,"$(convert(Int64,numBodies))","\n")
 		if numBodies == 3 
 			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n") #all the zeros are due to there being 0 deviation from the initial calculation,  by definition
@@ -497,7 +497,7 @@ equal is also optional. Plot() equalizes the axes of the trajectories by default
 function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=true) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	#Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, fileSave, MemorySave)
 	hParam, t0, periods, timesteps, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax = System(file, fileSave, Break, MemorySave)
-	datafile = "h≈(r÷v) data files/$fileSave"*".txt"
+	datafile = "data_files/$fileSave"*".txt"
 	m = parse.(Float64,split(readlines(datafile)[end-4],",")) #keep
 	OriginalX = parse.(Float64,split(readlines(datafile)[end-3],",")) #keep
 	numBodies = parse.(Float64,split(readlines(datafile)[1],","))[1]
@@ -540,7 +540,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 				if periods == true
 					sheet["J$i"] = t0
 				else
-					sheet["J$i"] = "$periods periods"
+					sheet["J$i"] = "$chop(periods) periods"
 				end
 				sheet["K$i"] = hParam
 				sheet["L$i"] = "[$Emin,$Emax]"
