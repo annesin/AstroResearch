@@ -15,7 +15,7 @@ color is the color of the trajectory of one of the particles. It must be one of 
 equal is optional. By default, the plot of the trajectories will have equal axes. To prevent this from happening, use an input other than 0 for equal.
 """
 function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-    file = "h≈(r÷v) data files/$file"
+    file = "data_files/$file"
     type = readlines(file)[end]
     numBodies = parse.(Int64,readlines(file)[1])
     if type == "N"
