@@ -104,13 +104,13 @@ function System(file, fileSave, Break, MemorySave=true)
 	R₂₃Z = R₂Z-R₃Z
 	velocityM3 = sqrt(G*(M1+M2)^2*(1-e2)/(A2*M)) 
 	velocityM1M2 = sqrt((G*(M3^2)*(1-e2))/(A2*M)) #velocity of inner CM
-	V₁X = -velocityM1M2*sind(Θ)
+	V₁X = velocityM1M2*sind(Θ)
 	V₁Y = -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ)
 	V₁Z = 0.0
-	V₂X = -velocityM1M2*sind(Θ)
+	V₂X = velocityM1M2*sind(Θ)
 	V₂Y = sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ)
 	V₂Z = 0.0
-	V₃X = velocityM3*sind(Θ)
+	V₃X = -velocityM3*sind(Θ)
 	V₃Y = velocityM3*cosd(Θ)
 	V₃Z = 0.0
 	if numBodies>3
@@ -118,6 +118,7 @@ function System(file, fileSave, Break, MemorySave=true)
 		V₄Y = x[8]
 		V₄Z = x[9]
 	end
+
 	V₁₂X = V₁X-V₂X
 	V₁₂Y = V₁Y-V₂Y
 	V₁₂Z = V₁Z-V₂Z
