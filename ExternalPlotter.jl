@@ -205,19 +205,19 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
         println("The timestep varied from $(minimum(lList)) to $(maximum(lList)).")
 	    println("The angular momentum varied by $(minimum(Llist)) to $(maximum(Llist)) while the energy varied by $(minimum(Elist)) to $(maximum(Elist)).")
         if color == "L"
-                plt.plot(Tlist,Llist) 
-            elseif color == "E"
-                plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
-            elseif color == "EL"
-                plt.plot(Tlist,Llist,linestyle="solid",color="green") 
-                plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
-            elseif color == "time"
-                plt.plot(lList,linestyle="solid",color="green")
-            else
+            plt.plot(Tlist,Llist) 
+        elseif color == "E"
+            plt.plot(Tlist,Elist) #find out what the scale things are, actually change to deltaE/E0
+        elseif color == "EL"
+            plt.plot(Tlist,Llist,linestyle="solid",color="green") 
+            plt.plot(Tlist,Elist,linestyle="solid",color="red") #find out what the scale things are, actually change to deltaE/E0
+        elseif color == "time"
+            plt.plot(lList,linestyle="solid",color="green")
+        else
             if numBodies == 2
-                    plt.plot(X1,Y1,linestyle="solid",color="red")
-                    plt.plot(X2,Y2,linestyle="solid",color=color)
-                    plt.axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
+                plt.plot(X1,Y1,linestyle="solid",color="red")
+                plt.plot(X2,Y2,linestyle="solid",color=color)
+                plt.axis("equal") #makes axes equal, especially helpful if orbits are highly elliptical
             else
                 if maximum(vcat(Z1,Z2,Z3,Z4))<0.0001 #checks to see if it has to graphed in 3D
                     plt.plot(X1,Y1,linestyle="solid",color="red")
@@ -252,6 +252,19 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
             end
         end
     end
+end
+
+function rotationalExternalPlotter(file)
+    a2s = []
+    for i in 2:parse.(Int64,readlines(file)[1])+1
+        append!(a2s, parse.(Float64,split(readlines(file)[i],","))[2])
+    end
+    thetas = range(0, length=parse.(Int64,readlines(file)[1]), stop=2pi)
+    radii = a2s
+    width = (2pi) / angles
+    ax = plt.subplot(polar=true)
+    bars = ax.bar(theta, radii, width=width)
+    plt.show()
 end
 
 LlistCreator(List) = try

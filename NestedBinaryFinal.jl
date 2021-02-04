@@ -427,16 +427,16 @@ function System(file, fileSave, Break, MemorySave=true)
 		end
 		println("\n")
 		if abs(L₂min) > (1.0 + 0.01*percent)*abs(L₂0) ||  (1.0 + 0.01*percent)*abs(L₂0) < abs(L₂max)
-			println("This is an unstable system!")
+			println("This is an unstable system! Angular momentum was not conserved.")
 			stability = 0
 		elseif abs(L₁min) > (1.0 + 0.01*percent)*abs(L₁0) ||  (1.0 + 0.01*percent)*abs(L₁0) < abs(L₁max)
-			println("This is an unstable system!")
+			println("This is an unstable system! Angular momentum of the inner binary was not conserved.")
 			stability = 0
 		elseif abs(E₂min) > (1.0 + 0.01*percent)*abs(E₂0) ||  (1.0 + 0.01*percent)*abs(E₂0) < abs(E₂max)
-			println("This is an unstable system!")
+			println("This is an unstable system! Energy was not conserved.")
 			stability = 0
 		elseif abs(E₁min) > (1.0 + 0.01*percent)*abs(E₁0) ||  (1.0 + 0.01*percent)*abs(E₁0) < abs(E₁max)
-			println("This is an unstable system!")
+			println("This is an unstable system! Energy of the inner binary was not conserved.")
 			stability = 0
 		else
 			println("This is a stable system!")
@@ -536,12 +536,12 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 				sheet["E$i"] = OriginalX[2]
 				sheet["F$i"] = OriginalX[3]
 				sheet["G$i"] = OriginalX[4]
-				sheet["H$i"] = OriginalX[5]
-				sheet["I$i"] = OriginalX[6]
+				sheet["H$i"] = OriginalX[6]
+				sheet["I$i"] = OriginalX[5]
 				if periods == true
 					sheet["J$i"] = t0
 				else
-					sheet["J$i"] = "$chop(periods) periods"
+					sheet["J$i"] = string(chop(periods), " periods")
 				end
 				sheet["K$i"] = hParam
 				sheet["L$i"] = "[$Emin,$Emax]"
