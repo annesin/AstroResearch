@@ -1,11 +1,14 @@
-include("NestedBinaryFinal.jl") 
+#include("NestedBinaryTrial.jl") 
+#include("NestedBinary_updated.jl")
+include("NestedBinaryFinal.jl")
 
-function StabilityFinder(m, a1, percent, t="1000P", hParam=0.01, fileSave="AutoSave", writeData=0)
+function StabilityFinder(m, a1, percent, t="1000P", hParam=0.01, fileSave="AutoSave")
     #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation
     a2=a1*2 #we'll begin with the outer separation being twice as large as the inner separation
-    stability = 0 
+    stability = 0
     sizeStep = 0 #this determines the amount we'll change a2 by with each test
     counter = 0 #this will help us test more cases, meaning that when a system is stable, we're more confident that we've stepped over that stability condition line
+    counterswitch = 0 #0 at first, 1 once has done the first step
     while sizeStep < 2 #This line indicates the number of significant figures that will be evaluated. The higher, the longer the runtime
         x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
         write(x,"$m"[2:end-1],"\n")
@@ -13,16 +16,24 @@ function StabilityFinder(m, a1, percent, t="1000P", hParam=0.01, fileSave="AutoS
         write(x,"$t,$hParam, $percent")
         close(x)
         println("The parameters here are masses $m, separations $a1 and $a2, with zero eccentricity, inclination, or angular offset.")
-        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])",writeData) #run simulation, get stability. Note that we're saving stuff for the heck of it
+        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
         rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
             mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
         else
             rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt")#deletes text file if data wasn't recorded in spreadsheet
         end
-        if stability == 1 && counter >= 4 #this is the case if we have a stable system after 5 consecutive checks
+        if stability == 1 && counterswitch == 1
             sizeStep += 1 #we're going to narrow our search case
-            a2 -= 5*10.0^(-(sizeStep-1))-10.0^-sizeStep #we cancel those 5 checks we had before to get back to the most recent unstable system, then increase increase a2
+            a2 += 10.0^-sizeStep
+        #changed counter from 4 to 10
+        elseif stability == 1 && counter >= 10 #this is the case if we have a stable system after 5 consecutive checks
+            sizeStep += 1 #we're going to narrow our search case
+            if sizeStep == 2
+                a2 -= 5*10.0^(-(sizeStep-1))
+            else
+                a2 -= 5*10.0^(-(sizeStep-1))-10.0^-sizeStep #we cancel those 5 checks we had before to get back to the most recent unstable system, then increase increase a2
+            end
             counter = 0 #we reset the counter too
         else #in this case, we either have an unstable system or a stable system that we just encountered
             a2 += 10.0^-sizeStep  #we increase a2
