@@ -332,7 +332,7 @@ function System(file, fileSave, Break, MemorySave=true)
 			elseif E < Emin
 				Emin = E
 			end
-			t0 = t0 + h #advances time
+			t0 = t0 + h #advances time, should this be defined by after the next few lines?
 			h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
 			h2 = sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
 			h3 = sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)

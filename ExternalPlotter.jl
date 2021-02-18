@@ -259,11 +259,17 @@ function rotationalExternalPlotter(file)
     for i in 2:parse.(Int64,readlines(file)[1])+1
         append!(a2s, parse.(Float64,split(readlines(file)[i],","))[2])
     end
-    thetas = range(0, length=parse.(Int64,readlines(file)[1]), stop=2pi)
+    thetas = collect(range(0, length=parse.(Int64,readlines(file)[1])+1, stop=2pi)) #collect makes array out of range
+    pop!(thetas) #don't want to use both thetas 0 and 2pi
     radii = a2s
-    width = (2pi) / angles
+    width = (2pi) / length(a2s)
     ax = plt.subplot(polar=true)
-    bars = ax.bar(theta, radii, width=width)
+    colors = []
+    for i in 1:length(thetas)
+        append!(colors,[map(rand, (Float16,Float16,Float16))])
+    end
+    print(colors)
+    bars = ax.bar(thetas, radii, width=width, color=colors)
     plt.show()
 end
 
