@@ -252,6 +252,8 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
             end
         end
     end
+    
+    plt.show()
 end
 
 function rotationalExternalPlotter(file)

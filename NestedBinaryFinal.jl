@@ -1,13 +1,18 @@
 using Pkg
-Pkg.add(url="https://github.com/timholy/ProgressMeter.jl.git")
+#Pkg.add(url="https://github.com/timholy/ProgressMeter.jl.git")
+#Pkg.add("ProgressMeter")
+#using ProgressMeter
+#Pkg.add(url="https://github.com/felipenoris/XLSX.jl.git")
+Pkg.add(PackageSpec(url ="https://github.com/timholy/ProgressMeter.jl.git"))
 Pkg.add("ProgressMeter")
 using ProgressMeter
-Pkg.add(url="https://github.com/felipenoris/XLSX.jl.git")
+Pkg.add(PackageSpec(url ="https://github.com/felipenoris/XLSX.jl.git"))
 Pkg.add("XLSX")
 import XLSX
 
 const G = 2945.49 #gravitational constant, making this const greatly reduces memory usage
 
+#NOTE: old code said it was semi-major axes, but it was separations
 "Inputs a file and retrieves the necessary information from the file. This includes the masses of the bodies and their initial conditions."
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for NestedBinary =#
@@ -36,9 +41,11 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 	if Parse[1][end] == "P"[1]
 		t = sqrt((XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3])))*parse(Float64,Parse[1][1:end-1])
 		notPeriods = Parse[1]
+		println("t1 is ", t)
 	else
 		t = parse(Float64,Parse[1])
-		notPeriods = true
+		notPeriods = true	
+		println("t2 is ", t)
 	end
 	hParam = parse.(Float64,split(readlines(file)[3],",")[2]) #these should be the elements of the third line of the .txt file
 	percent = parse.(Float64,split(readlines(file)[3],",")[3])
@@ -128,9 +135,9 @@ function System(file, fileSave, Break, MemorySave=true)
 	V₂₃X = V₂X-V₃X
 	V₂₃Y = V₂Y-V₃Y
 	V₂₃Z = V₂Z-V₃Z
-	VINCMX = (m[2]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
-	VINCMY = (m[2]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
-	VINCMZ = (m[2]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
+	VINCMX = (m[1]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
+	VINCMY = (m[1]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
+	VINCMZ = (m[1]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
 
 	K = .5*m[1]*sqrt(V₁X^2+V₁Y^2+V₁Z^2)^2+.5*m[2]*sqrt(V₂X^2+V₂Y^2+V₂Z^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 #overall kinetic energy
 	U = -(G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)+G*m[1]*m[3]/sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)+G*m[2]*m[3]/sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)) #total gravitational potential energy
@@ -354,9 +361,9 @@ function System(file, fileSave, Break, MemorySave=true)
 				LX = (LX-LX0)/LX0
 				LY = (LY-LY0)/LY0
 				LZ = (LZ-LZ0)/LZ0
-				VINCMX = (m[2]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
-				VINCMY = (m[2]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
-				VINCMZ = (m[2]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
+				VINCMX = (m[1]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
+				VINCMY = (m[1]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
+				VINCMZ = (m[1]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
 				CM₁₂X = (M1*R₁X+M2*R₂X)/(M1+M2)
 				CM₁₂Y = (M1*R₁Y+M2*R₂Y)/(M1+M2)
 				CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
@@ -512,7 +519,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 	#println("This took $timesteps timesteps to simulate.")
 	println("The inner binary energy was $E₁0 and varied from $E₁min to $E₁max")
 	println("The inner binary momentum was $L₁0 and varied from $L₁min to $L₁max")
-	println("The outer binary evergy was $E₂0 and varied from $E₂min to $E₂max")
+	println("The outer binary energy was $E₂0 and varied from $E₂min to $E₂max")
 	println("The outer binary momentum was $L₂0 and varied from $L₂min to $L₂max")
 	record = true
 	rowNumber = 0

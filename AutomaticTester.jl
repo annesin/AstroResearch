@@ -1,6 +1,8 @@
-include("NestedBinaryFinal.jl") 
+#include("NestedBinaryTrial.jl") 
+#include("NestedBinary_updated.jl")
+include("NestedBinaryFinal.jl")
 
-function StabilityFinder(m, a1, theta, percent=5, precision=2, t="1000P", hParam=0.01, fileSave="AutoSave", startinga2=0)
+function StabilityFinder(m, a1, theta, percent=5, precision=2, t="1000P", hParam=0.01, fileSave="AutoSave", writeData=0, startinga2=0)
     #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation
     if startinga2==0 #unless told otherwise
         a2=a1*2 #we'll begin with the outer separation being twice as large as the inner separation
@@ -19,7 +21,7 @@ function StabilityFinder(m, a1, theta, percent=5, precision=2, t="1000P", hParam
         write(x,"$t,$hParam, $percent")
         close(x)
         println("The parameters here are masses $m, separations $a1 and $a2, with zero eccentricity and inclination, and $theta angular offset.")
-        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2,theta]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2,theta])") #run simulation, get stability. Note that we're saving stuff for the heck of it
+        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2,theta]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2,theta])", writeData) #run simulation, get stability. Note that we're saving stuff for the heck of it
         rm("Test_$([m[1],m[2],m[3],a1,a2,theta]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
             mv("data_files/AutoSave_$([m[1],m[2],m[3],a1,a2,theta]).txt","data_files/$fileSave"*"_$rowNumber"*".txt", force=true)
