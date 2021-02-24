@@ -1,5 +1,6 @@
 #include("NestedBinary_updated.jl") 
-include("NestedBinaryFinal.jl")
+#include("NestedBinaryFinal.jl")
+include("NestedBinary_Ben.jl")
 
 function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="AutoSave")
     #here, m is an stringed array of the masses [M1, M2, Mdonor] while a2 is a Float64 that is the outer separation
@@ -24,43 +25,37 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
     maxstable = 0
     avg = 0
     islandcheck = false
-    
+    #removed finding stability
     y = open("Total_$([m[1],m[2],m[3],a2]).txt","w") #creating file to record outputs
-    write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2,\n")
-    println("before first Master\n")
-    x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
-    write(x,"$m"[2:end-1],"\n")
-    write(x,"$a1,0,$a2,0,0,0\n")
-    write(x,"$t,$hParam, $percent")
-    close(x)
-    record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
-    println("after first Master\n")
-    rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
-    if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
-        mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
-    else
-        rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt")#deletes text file if data wasn't recorded in spreadsheet
-    end
     while precision > percent || islandcheck == false #islandcheck only evaluated if precision <= percent
     #while a1 > .5
-        println("test after while 1")
-        #x = open("Full_$([m[1],m[2],m[3],a2]).txt","w")
-        write(y,"a1 is $a1, stability is $stability, counter is $counter\n")
-        #close(x)
-        #this is where the top comment was
-        println("after Master") #now gets here
-        #this is where rm was
-       # println("before if/else")
-       #this is where I deleted the bottom thing
+        println("before first Master\n")
+        x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
+        write(x,"$m"[2:end-1],"\n")
+        write(x,"$a1,0,$a2,0,0,0\n")
+        write(x,"$t,$hParam, $percent")
+        close(x)
+        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
+        println("after first Master\n")
+        rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
+        if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
+            mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
+        else
+            rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt")#deletes text file if data wasn't recorded in spreadsheet
+        end
+        write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2,\n")
         if stability == 1 && counter > 4 #this is the case if we have a stable system after 5 consecutive checks 
             println("test stable big count")
             #can this just be replaced with minunstable?
             #what about precision? is that calculated?
+            #=
             while i <= 4 #reset to the original stable condition
                 a1 = a1*divfactor
                 i += 1
              #   println("while a1 = $a1")
             end
+            =#
+            a1 = minunstable
             i = 0
             println("after while a1 is $a1")
             divfactor = 1+(divfactor-1)/10
@@ -68,19 +63,7 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
             println("                 stab 1 and counter 4")
             println("new a1 is $a1")
             println("before stable count 4 master\n")
-            x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
-            write(x,"$m"[2:end-1],"\n")
-            write(x,"$a1,0,$a2,0,0,0\n")
-            write(x,"$t,$hParam, $percent")
-            close(x)
-            record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
-            rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
-            println("after stable count 4 master\n")
-            if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
-                mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
-            else
-                rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt")#deletes text file if data wasn't recorded in spreadsheet
-            end
+            #removed finding stability
             counter = 0 #reset
             islandcheck = true
             println("stable, counter >= 4")
@@ -88,40 +71,17 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
         elseif stability == 1 && islandcheck == true #we don't have to keep checking islands after the first time
             divfactor = 1+(divfactor-1)/10
             a1 = a1/divfactor # do we want overestimate or underestimate?
+            maxstable = a1
             println("                 stab 1 and islandcheck")
             println("new a1 is $a1")
             println("before stable islandcheck master\n")
-            x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
-            write(x,"$m"[2:end-1],"\n")
-            write(x,"$a1,0,$a2,0,0,0\n")
-            write(x,"$t,$hParam, $percent")
-            close(x)
-            record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
-            rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
-            println("after stable islandcheck master\n")
-            if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
-                mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
-            else
-                rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt")#deletes text file if data wasn't recorded in spreadsheet
-            end
+            #removed finding stability
             println("stable, islandcheck = true")
             println("precision is $precision")
         else
-            islandcheck = false
+            #islandcheck = false
             a1 = a1/divfactor
-            x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
-            write(x,"$m"[2:end-1],"\n")
-            #println("m array thing is ", m[2:end-1])
-            write(x,"$a1,0,$a2,0,0,0\n")
-            write(x,"$t,$hParam, $percent")
-            close(x)
-            record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
-            rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
-            if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
-                mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
-            else
-                rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt")#deletes text file if data wasn't recorded in spreadsheet
-            end
+            #removed finding stability
             println("small count, before if/else")
             if stability == 1 && counter <= 4 #stable system, but not enough consecutive steps yet
                 println("test stable but small count")
@@ -134,7 +94,7 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
             else #in this case, we have an unstable system
                 println("test unstable")
                 counter = 0
-                minunstable = a1
+                minunstable = a1 #a1 will reset to minunstable after five checks, will this cause problem?
                 if minunstable < maxstable #found an island of stability
                     maxstable = 0
                 end
@@ -173,7 +133,6 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
         if record
             sheet["A$i"] = m[1]
             sheet["B$i"] = m[2]
-            #check this later
             #sheet["C$i"] = round(a1 + 10.0^(-(sizeStep-1));digits=2) #changed to just a1
             sheet["C$i"] = round(a1;digits=2)
             sheet["D$i"] = a2
@@ -232,4 +191,3 @@ end
             end
         end
         =#
-
