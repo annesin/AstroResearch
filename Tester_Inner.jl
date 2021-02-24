@@ -1,4 +1,3 @@
-
 #include("NestedBinary_updated.jl") 
 include("NestedBinaryFinal.jl")
 
@@ -174,6 +173,7 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
         if record
             sheet["A$i"] = m[1]
             sheet["B$i"] = m[2]
+            #check this later
             #sheet["C$i"] = round(a1 + 10.0^(-(sizeStep-1));digits=2) #changed to just a1
             sheet["C$i"] = round(a1;digits=2)
             sheet["D$i"] = a2
@@ -232,3 +232,4 @@ end
             end
         end
         =#
+

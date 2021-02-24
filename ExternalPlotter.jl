@@ -15,7 +15,7 @@ color is the color of the trajectory of one of the particles. It must be one of 
 equal is optional. By default, the plot of the trajectories will have equal axes. To prevent this from happening, use an input other than 0 for equal.
 """
 function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
-    file = "h≈(r÷v) data files/$file"
+    file = "data_files/$file"
     type = readlines(file)[end]
     numBodies = parse.(Int64,readlines(file)[1])
     if type == "N"
@@ -253,6 +253,25 @@ function ExternalPlot(file, color, equal=0) #plotting L, E, or positions over ti
         end
     end
     
+    plt.show()
+end
+
+function rotationalExternalPlotter(file)
+    a2s = []
+    for i in 2:parse.(Int64,readlines(file)[1])+1
+        append!(a2s, parse.(Float64,split(readlines(file)[i],","))[2])
+    end
+    thetas = collect(range(0, length=parse.(Int64,readlines(file)[1])+1, stop=2pi)) #collect makes array out of range
+    pop!(thetas) #don't want to use both thetas 0 and 2pi
+    radii = a2s
+    width = (2pi) / length(a2s)
+    ax = plt.subplot(polar=true)
+    colors = []
+    for i in 1:length(thetas)
+        append!(colors,[map(rand, (Float16,Float16,Float16))])
+    end
+    print(colors)
+    bars = ax.bar(thetas, radii, width=width, color=colors)
     plt.show()
 end
 

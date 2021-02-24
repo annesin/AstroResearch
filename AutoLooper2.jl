@@ -1,6 +1,6 @@
 include("AutomaticTester.jl")
 
-function Looper(a1::Int64, F::Int64, t="100P", hParam=0.01, fileSave="AutoSave")
+function Looper(a1::Int64, F::Int64, t="1000P", hParam=0.01, fileSave="AutoSave")
     m = [0]
     for x = 1::3
         if x == 1

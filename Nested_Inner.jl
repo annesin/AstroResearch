@@ -1,8 +1,4 @@
 using Pkg
-#Pkg.add(url="https://github.com/timholy/ProgressMeter.jl.git")
-#Pkg.add("ProgressMeter")
-#using ProgressMeter
-#Pkg.add(url="https://github.com/felipenoris/XLSX.jl.git")
 Pkg.add(PackageSpec(url ="https://github.com/timholy/ProgressMeter.jl.git"))
 Pkg.add("ProgressMeter")
 using ProgressMeter
@@ -12,7 +8,11 @@ import XLSX
 
 const G = 2945.49 #gravitational constant, making this const greatly reduces memory usage
 
-#NOTE: old code said it was semi-major axes, but it was separations
+#=
+Minner,Mdonor
+ai, ei, ao, eo #semi-major axes and eccentricity
+time, timestep, drift allowance
+=#
 "Inputs a file and retrieves the necessary information from the file. This includes the masses of the bodies and their initial conditions."
 function fileInput(file) #change initial conditions to m1, m2, semi-major axis, e, 
 #= This function inputs a .txt file and extracts data from it to get the inputs needed for NestedBinary =#
@@ -21,17 +21,21 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 	mArray = parse.(Float64,split(readlines(file)[1],",")) #this inputs the masses of the bodies
 	XArray = parse.(Float64,split(readlines(file)[2],",")) #this inputs the initial conditions of the bodies
 
-	if length(XArray) != 6 && length(XArray) != 9 #this makes sure that each body has 6 entries: a position and velocity in the x, y, and z direction. 
+	if length(XArray) != 4  #this makes sure that each body has 4 entries: a semi-major axis and angle
 		error("Invalid input: wrong number of initial conditions; go back and check the input.")
 	end
 
-	numBodies = (length(XArray)/6)+2 #this is different than the number of masses, because the test particle counts as a massless body here
+	#numBodies = (length(XArray)/6)+2 #this is different than the number of masses, because the test particle counts as a massless body here
+
+	numBodies = 3
 
 	if numBodies == 3 #so, here, we either have three massive bodies or two massive bodies with a test particle
 		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C) #these are the functions we need for that
+		#=
 		if length(mArray) == 2 #test particle with 2 numBodies
 			push!(mArray,0) #including the test particle as a third body with zero mass
 		end
+		=#
 	elseif numBodies == 4 #NestedBinary.jl cannot handle four massive bodies, so presumably, this is three massive bodies with a test particle
 		push!(fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C, f1D, f2D, f3D, f4D, f5D, f6D) #these are the functions we need
 	else
@@ -41,11 +45,9 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 	if Parse[1][end] == "P"[1]
 		t = sqrt((XArray[3]/(XArray[4]+1))^3*(4*pi^2)/(G*(mArray[1]+mArray[2]+mArray[3])))*parse(Float64,Parse[1][1:end-1])
 		notPeriods = Parse[1]
-		println("t1 is ", t)
 	else
 		t = parse(Float64,Parse[1])
-		notPeriods = true	
-		println("t2 is ", t)
+		notPeriods = true
 	end
 	hParam = parse.(Float64,split(readlines(file)[3],",")[2]) #these should be the elements of the third line of the .txt file
 	percent = parse.(Float64,split(readlines(file)[3],",")[3])
@@ -111,13 +113,13 @@ function System(file, fileSave, Break, MemorySave=true)
 	R₂₃Z = R₂Z-R₃Z
 	velocityM3 = sqrt(G*(M1+M2)^2*(1-e2)/(A2*M)) 
 	velocityM1M2 = sqrt((G*(M3^2)*(1-e2))/(A2*M)) #velocity of inner CM
-	V₁X = velocityM1M2*sind(Θ)
+	V₁X = -velocityM1M2*sind(Θ)
 	V₁Y = -sqrt(G*(M2^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ)
 	V₁Z = 0.0
-	V₂X = velocityM1M2*sind(Θ)
+	V₂X = -velocityM1M2*sind(Θ)
 	V₂Y = sqrt(G*(M1^2)*(1-e1)/(A1*(M2+M1)))-velocityM1M2*cosd(Θ)
 	V₂Z = 0.0
-	V₃X = -velocityM3*sind(Θ)
+	V₃X = velocityM3*sind(Θ)
 	V₃Y = velocityM3*cosd(Θ)
 	V₃Z = 0.0
 	if numBodies>3
@@ -125,7 +127,6 @@ function System(file, fileSave, Break, MemorySave=true)
 		V₄Y = x[8]
 		V₄Z = x[9]
 	end
-
 	V₁₂X = V₁X-V₂X
 	V₁₂Y = V₁Y-V₂Y
 	V₁₂Z = V₁Z-V₂Z
@@ -267,7 +268,7 @@ function System(file, fileSave, Break, MemorySave=true)
 	end
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	stability = 1.5
-	open("data_files/$fileSave"*".txt","w") do datafile
+	open("h≈(r÷v) data files/$fileSave"*".txt","w") do datafile
 		write(datafile,"$(convert(Int64,numBodies))","\n")
 		if numBodies == 3 
 			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n") #all the zeros are due to there being 0 deviation from the initial calculation,  by definition
@@ -339,7 +340,7 @@ function System(file, fileSave, Break, MemorySave=true)
 			elseif E < Emin
 				Emin = E
 			end
-			t0 = t0 + h #advances time, should this be defined by after the next few lines?
+			t0 = t0 + h #advances time
 			h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
 			h2 = sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
 			h3 = sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
@@ -434,16 +435,16 @@ function System(file, fileSave, Break, MemorySave=true)
 		end
 		println("\n")
 		if abs(L₂min) > (1.0 + 0.01*percent)*abs(L₂0) ||  (1.0 + 0.01*percent)*abs(L₂0) < abs(L₂max)
-			println("This is an unstable system! Angular momentum was not conserved.")
+			println("This is an unstable system!")
 			stability = 0
 		elseif abs(L₁min) > (1.0 + 0.01*percent)*abs(L₁0) ||  (1.0 + 0.01*percent)*abs(L₁0) < abs(L₁max)
-			println("This is an unstable system! Angular momentum of the inner binary was not conserved.")
+			println("This is an unstable system!")
 			stability = 0
 		elseif abs(E₂min) > (1.0 + 0.01*percent)*abs(E₂0) ||  (1.0 + 0.01*percent)*abs(E₂0) < abs(E₂max)
-			println("This is an unstable system! Energy was not conserved.")
+			println("This is an unstable system!")
 			stability = 0
 		elseif abs(E₁min) > (1.0 + 0.01*percent)*abs(E₁0) ||  (1.0 + 0.01*percent)*abs(E₁0) < abs(E₁max)
-			println("This is an unstable system! Energy of the inner binary was not conserved.")
+			println("This is an unstable system!")
 			stability = 0
 		else
 			println("This is a stable system!")
@@ -505,7 +506,7 @@ equal is also optional. Plot() equalizes the axes of the trajectories by default
 function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=true) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	#Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, fileSave, MemorySave)
 	hParam, t0, periods, timesteps, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax = System(file, fileSave, Break, MemorySave)
-	datafile = "data_files/$fileSave"*".txt"
+	datafile = "h≈(r÷v) data files/$fileSave"*".txt"
 	m = parse.(Float64,split(readlines(datafile)[end-4],",")) #keep
 	OriginalX = parse.(Float64,split(readlines(datafile)[end-3],",")) #keep
 	numBodies = parse.(Float64,split(readlines(datafile)[1],","))[1]
@@ -519,7 +520,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 	#println("This took $timesteps timesteps to simulate.")
 	println("The inner binary energy was $E₁0 and varied from $E₁min to $E₁max")
 	println("The inner binary momentum was $L₁0 and varied from $L₁min to $L₁max")
-	println("The outer binary energy was $E₂0 and varied from $E₂min to $E₂max")
+	println("The outer binary evergy was $E₂0 and varied from $E₂min to $E₂max")
 	println("The outer binary momentum was $L₂0 and varied from $L₂min to $L₂max")
 	record = true
 	rowNumber = 0
@@ -543,12 +544,12 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 				sheet["E$i"] = OriginalX[2]
 				sheet["F$i"] = OriginalX[3]
 				sheet["G$i"] = OriginalX[4]
-				sheet["H$i"] = OriginalX[6]
-				sheet["I$i"] = OriginalX[5]
+				sheet["H$i"] = OriginalX[5]
+				sheet["I$i"] = OriginalX[6]
 				if periods == true
 					sheet["J$i"] = t0
 				else
-					sheet["J$i"] = string(chop(periods), " periods")
+					sheet["J$i"] = "$periods periods"
 				end
 				sheet["K$i"] = hParam
 				sheet["L$i"] = "[$Emin,$Emax]"
