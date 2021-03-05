@@ -1,12 +1,13 @@
 #include("NestedBinary_updated.jl") 
-#include("NestedBinaryFinal.jl")
-include("NestedBinary_Ben.jl")
+include("NestedBinaryFinal.jl")
+#include("NestedBinary_Ben.jl")
 
-function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="AutoSave")
+function StabilityFinder2(m, a2, theta, percent=.01, t="1000P", hParam=0.01, fileSave="AutoSaveIn")
+    #Note: Tester_Inner and Automatic tester have different meanings of percent and precision
     #here, m is an stringed array of the masses [M1, M2, Mdonor] while a2 is a Float64 that is the outer separation
     #gotta get t here for the GR condition, even though NestedBinary will calculate it later
     timelist = split(t, "P") #note: split removes the P
-    if t[end] == 'P'
+    if t[end] == 'P' #check  that this does not depend on theta
         t = sqrt((a2)^3*(4*pi^2)/(G*(m[1]+m[2]+m[3])))*parse(Float64, timelist[1])
         notPeriods = timelist[1]*timelist[2]
     else
@@ -26,22 +27,23 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
     avg = 0
     islandcheck = false
     #removed finding stability
-    y = open("Total_$([m[1],m[2],m[3],a2]).txt","w") #creating file to record outputs
+    y = open("Total_$([m[1],m[2],m[3],a2,theta]).txt","w") #creating file to record outputs
     while precision > percent || islandcheck == false #islandcheck only evaluated if precision <= percent
     #while a1 > .5
-        println("before first Master\n")
-        x = open("Test_$([m[1],m[2],m[3],a1,a2]).txt","w") #creating the input file
+        println("before first Master\n") #call TestIn to not mixup with A_T files
+        x = open("TestIn_$([m[1],m[2],m[3],a1,a2,theta]).txt","w") #creating the input file
         write(x,"$m"[2:end-1],"\n")
-        write(x,"$a1,0,$a2,0,0,0\n")
+        write(x,"$a1,0,$a2,0,$theta,0\n")
         write(x,"$t,$hParam, $percent")
         close(x)
-        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2])") #run simulation, get stability. Note that we're saving stuff for the heck of it
+        record, rowNumber, stability = Master("TestIn_$([m[1],m[2],m[3],a1,a2,theta]).txt",true,"AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta])") #run simulation, get stability. Note that we're saving stuff for the heck of it
         println("after first Master\n")
-        rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
+        rm("TestIn_$([m[1],m[2],m[3],a1,a2,theta]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
-            mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
+            #use h≈(r÷v) data files on copernicus, data_files locally
+            mv("h≈(r÷v) data files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
         else
-            rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2]).txt")#deletes text file if data wasn't recorded in spreadsheet
+            rm("h≈(r÷v) data files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt")#deletes text file if data wasn't recorded in spreadsheet
         end
         write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2,\n")
         if stability == 1 && counter > 4 #this is the case if we have a stable system after 5 consecutive checks 
@@ -130,7 +132,7 @@ function StabilityFinder2(m, a2, percent, t="1000P", hParam=0.01, fileSave="Auto
             i += 1
         end
         rowNumber = i
-        if record
+        if record #fix this so matches A_T
             sheet["A$i"] = m[1]
             sheet["B$i"] = m[2]
             #sheet["C$i"] = round(a1 + 10.0^(-(sizeStep-1));digits=2) #changed to just a1
