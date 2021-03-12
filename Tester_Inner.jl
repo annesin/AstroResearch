@@ -26,9 +26,6 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
     maxstable = 0
     avg = 0
     islandcheck = false
-    #y = open("Total_$([m[1],m[2],m[3],a2,theta]).txt","w") #creating file to record outputs, "a" means append
-    #namestring = "Total_$([m[1],m[2],m[3],a2,theta]).txt"
-    #close(y)
     #removed finding stability
     while precision > percent || islandcheck == false #islandcheck only evaluated if precision <= percent
     #while a1 > .5
@@ -43,12 +40,11 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
         rm("TestIn_$([m[1],m[2],m[3],a1,a2,theta]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
             #use h≈(r÷v) data files on copernicus, data_files locally
-            mv("data_files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt","data_files/$fileSave"*"_$rowNumber"*".txt", force=true)
+            mv("h≈(r÷v) data files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
         else
-            rm("data_files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt")#deletes text file if data wasn't recorded in spreadsheet
+            rm("h≈(r÷v) data files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt")#deletes text file if data wasn't recorded in spreadsheet
         end
-        #open(namestring, "a")
-        y = open("Total_$([m[1],m[2],m[3],a2,theta]).txt","a") #creating file to record outputs, "a" means append
+        y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
         write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2,\n")
         close(y) #by opening and closing each time, should record even if pipe is broken
         if stability == 1 && counter > 4 #this is the case if we have a stable system after 5 consecutive checks 
