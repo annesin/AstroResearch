@@ -59,7 +59,7 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
             end
             =#
             a1 = minunstable
-            i = 0
+            #i = 0
             println("after while a1 is $a1")
             divfactor = 1+(divfactor-1)/10
             a1 = a1/divfactor # do we want overestimate or underestimate?
@@ -72,9 +72,10 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
             println("stable, counter >= 4")
             println("precision is $precision")
         elseif stability == 1 && islandcheck == true #we don't have to keep checking islands after the first time
-            divfactor = 1+(divfactor-1)/10
-            a1 = a1/divfactor # do we want overestimate or underestimate?
             maxstable = a1
+            divfactor = 1+(divfactor-1)/10
+            a1 = a1*divfactor # do we want overestimate or underestimate?
+            #maxstable = a1
             println("                 stab 1 and islandcheck")
             println("new a1 is $a1")
             println("before stable islandcheck master\n")
@@ -83,7 +84,7 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
             println("precision is $precision")
         else
             #islandcheck = false
-            a1 = a1/divfactor
+            #a1 = a1/divfactor
             #removed finding stability
             println("small count, before if/else")
             if stability == 1 && counter <= 4 #stable system, but not enough consecutive steps yet
@@ -92,6 +93,7 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
                     maxstable = a1
                 end
                 counter+=1
+                a1 = a1/divfactor
                 println("                    stab 1 counter <4")
                 println("new a1 is $a1")
             else #in this case, we have an unstable system
@@ -101,6 +103,7 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
                 if minunstable < maxstable #found an island of stability
                     maxstable = 0
                 end
+                a1 = a1/divfactor
                 println("                       stab 0")
                 println("new a1 is $a1")
             end
