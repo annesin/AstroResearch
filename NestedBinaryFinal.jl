@@ -514,7 +514,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 	println("\n")
 	println("$t0 days later...")
 	println("The timestep varied from $lmin to $lmax.")
-	#println("The angular momentum varied by $((Lmin)) to $((Lmax)) while the energy varied by $Emin to $Emax.") #magnitude of angular momentum here for simplicity
+	println("The angular momentum varied by $((Lmin)) to $((Lmax)) while the energy varied by $Emin to $Emax.") #magnitude of angular momentum here for simplicity
 	println("This ran in $timeTaken seconds.")
 	#println("This took $timesteps timesteps to simulate.")
 	println("The inner binary energy was $E₁0 and varied from $E₁min to $E₁max")
@@ -552,7 +552,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=t
 				end
 				sheet["K$i"] = hParam
 				sheet["L$i"] = "[$Emin,$Emax]"
-				sheet["M$i"] = "[[$(LmaxX),$(LminY),$(LminZ)],[$(LmaxX),$(LmaxY),$(LmaxZ)]]"
+				sheet["M$i"] = "[[$(LminX),$(LminY),$(LminZ)],[$(LmaxX),$(LmaxY),$(LmaxZ)]]"
 				sheet["N$i"] = "[$E₁min,$E₁max]"
 				sheet["O$i"] = "[$E₂min,$E₂max]"
 				sheet["P$i"] = "[[$(L₁minX),$(L₁minY),$(L₁minZ)],[$(L₁maxX),$(L₁maxY),$(L₁maxZ)]]"
