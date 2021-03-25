@@ -9,6 +9,8 @@ using ProgressMeter
 Pkg.add(PackageSpec(url ="https://github.com/felipenoris/XLSX.jl.git"))
 Pkg.add("XLSX")
 import XLSX
+Pkg.add("Crayons")
+using Crayons
 
 const G = 2945.49 #gravitational constant, making this const greatly reduces memory usage
 
@@ -56,6 +58,12 @@ end
 function System(file, fileSave, Break, MemorySave=true)
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
 	f, x, m, t, hParam, percent, numBodies, periods = fileInput(file) #gets info from file
+
+	if percent>1 #Here, we standardize what percent means
+		println(Crayon(foreground=(255,0,0)),"Note that this will run with 0.0"*chop(chop("$percent"))*"%, not "*"$percent"*"%, to check for stability.")
+		print(Crayon(foreground=(255,255,255)),"")
+		percent *= 0.01
+	end
 
 	OriginalX = x
 
@@ -433,16 +441,16 @@ function System(file, fileSave, Break, MemorySave=true)
 			counter += 1
 		end
 		println("\n")
-		if abs(L₂min) > (1.0 + 0.01*percent)*abs(L₂0) ||  (1.0 + 0.01*percent)*abs(L₂0) < abs(L₂max)
+		if abs(L₂min) > (1.0 + percent)*abs(L₂0) ||  (1.0 + percent)*abs(L₂0) < abs(L₂max)
 			println("This is an unstable system! Angular momentum was not conserved.")
 			stability = 0
-		elseif abs(L₁min) > (1.0 + 0.01*percent)*abs(L₁0) ||  (1.0 + 0.01*percent)*abs(L₁0) < abs(L₁max)
+		elseif abs(L₁min) > (1.0 + percent)*abs(L₁0) ||  (1.0 + percent)*abs(L₁0) < abs(L₁max)
 			println("This is an unstable system! Angular momentum of the inner binary was not conserved.")
 			stability = 0
-		elseif abs(E₂min) > (1.0 + 0.01*percent)*abs(E₂0) ||  (1.0 + 0.01*percent)*abs(E₂0) < abs(E₂max)
+		elseif abs(E₂min) > (1.0 + percent)*abs(E₂0) ||  (1.0 + percent)*abs(E₂0) < abs(E₂max)
 			println("This is an unstable system! Energy was not conserved.")
 			stability = 0
-		elseif abs(E₁min) > (1.0 + 0.01*percent)*abs(E₁0) ||  (1.0 + 0.01*percent)*abs(E₁0) < abs(E₁max)
+		elseif abs(E₁min) > (1.0 + percent)*abs(E₁0) ||  (1.0 + percent)*abs(E₁0) < abs(E₁max)
 			println("This is an unstable system! Energy of the inner binary was not conserved.")
 			stability = 0
 		else
