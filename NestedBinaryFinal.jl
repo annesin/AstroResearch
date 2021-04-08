@@ -60,7 +60,7 @@ function System(file, fileSave, Break, MemorySave=true)
 	f, x, m, t, hParam, percent, numBodies, periods = fileInput(file) #gets info from file
 
 	if percent>1 #Here, we standardize what percent means
-		println(Crayon(foreground=(255,0,0)),"Note that this will run with 0.0"*chop(chop("$percent"))*"%, not "*"$percent"*"%, to check for stability.")
+		println(Crayon(foreground=(255,0,0)),"Note that this will run with 0.0"*chop(chop("$percent"))*", not "*"$percent"*", to check for stability.")
 		print(Crayon(foreground=(255,255,255)),"")
 		percent *= 0.01
 	end
@@ -442,13 +442,13 @@ function System(file, fileSave, Break, MemorySave=true)
 		end
 		println("\n")
 		if abs(L₂min) > (1.0 + percent)*abs(L₂0) ||  (1.0 + percent)*abs(L₂0) < abs(L₂max)
-			println("This is an unstable system! Angular momentum was not conserved.")
+			println("This is an unstable system! Angular momentum of the outer binary was not conserved.")
 			stability = 0
 		elseif abs(L₁min) > (1.0 + percent)*abs(L₁0) ||  (1.0 + percent)*abs(L₁0) < abs(L₁max)
 			println("This is an unstable system! Angular momentum of the inner binary was not conserved.")
 			stability = 0
 		elseif abs(E₂min) > (1.0 + percent)*abs(E₂0) ||  (1.0 + percent)*abs(E₂0) < abs(E₂max)
-			println("This is an unstable system! Energy was not conserved.")
+			println("This is an unstable system! Energy of the outer binary was not conserved.")
 			stability = 0
 		elseif abs(E₁min) > (1.0 + percent)*abs(E₁0) ||  (1.0 + percent)*abs(E₁0) < abs(E₁max)
 			println("This is an unstable system! Energy of the inner binary was not conserved.")
