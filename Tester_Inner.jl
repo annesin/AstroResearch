@@ -15,6 +15,8 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
         t = parse(Float64,timelist[1])
         notPeriods = true
     end
+    println("t is $t")
+    println("G is $G")
     #gr = 1.135((t/(10^9))*m[1]*m[2]*(m[1]+m[2]))^(1/4) #GR CONDITION: assuming e = 0, t in gigayears?
     a1 = .5*a2
     stability = 0 
@@ -125,6 +127,11 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
             end
             println("precision is $precision")
         end
+        y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
+        write(y,"final\n")
+        write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2\n")
+        write(y,"maxstable is $maxstable, minunstable is $minunstable, divfactor is $divfactor, precision is $precision\n")
+        close(y)
         #=
         rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
