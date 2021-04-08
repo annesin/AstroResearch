@@ -6,6 +6,7 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
     #Note: Tester_Inner and Automatic tester have different meanings of percent and precision
     #here, m is an stringed array of the masses [M1, M2, Mdonor] while a2 is a Float64 that is the outer separation
     #gotta get t here for the GR condition, even though NestedBinary will calculate it later
+    #percent is such that 5 is 5%
     timelist = split(t, "P") #note: split removes the P
     if t[end] == 'P' #check  that this does not depend on theta
         t = sqrt((a2)^3*(4*pi^2)/(G*(m[1]+m[2]+m[3])))*parse(Float64, timelist[1])
@@ -14,6 +15,8 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
         t = parse(Float64,timelist[1])
         notPeriods = true
     end
+    println("t is $t")
+    println("G is $G")
     #gr = 1.135((t/(10^9))*m[1]*m[2]*(m[1]+m[2]))^(1/4) #GR CONDITION: assuming e = 0, t in gigayears?
     a1 = .5*a2
     stability = 0 
@@ -21,7 +24,7 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
     precision = 1 
     divfactor = 1.1 #for 10% decreases, making sizesteps logarithmic
     counter = 0 #this will help us test more cases, meaning that when a system is stable, we're more confident that we've stepped over that stability condition line
-    i = 0 #counter to reset in while loops
+    #i = 0 #counter to reset in while loops
     minunstable = a2
     maxstable = 0
     avg = 0
@@ -45,7 +48,8 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
             rm("h≈(r÷v) data files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt")#deletes text file if data wasn't recorded in spreadsheet
         end
         y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
-        write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2,\n")
+        write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2\n")
+        write(y,"maxstable is $maxstable, minunstable is $minunstable, divfactor is $divfactor, precision is $precision\n")
         close(y) #by opening and closing each time, should record even if pipe is broken
         if stability == 1 && counter > 4 #this is the case if we have a stable system after 5 consecutive checks 
             println("test stable big count")
@@ -71,10 +75,15 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
             islandcheck = true
             println("stable, counter >= 4")
             println("precision is $precision")
+            y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
+            write(y,"Stable, just finished island check\n")
+            close(y)
         elseif stability == 1 && islandcheck == true #we don't have to keep checking islands after the first time
             maxstable = a1
             divfactor = 1+(divfactor-1)/10
-            a1 = a1*divfactor # do we want overestimate or underestimate?
+            #a1 = a1*divfactor
+            a1 = minunstable
+            a1 = a1/divfactor 
             #maxstable = a1
             println("                 stab 1 and islandcheck")
             println("new a1 is $a1")
@@ -82,6 +91,9 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
             #removed finding stability
             println("stable, islandcheck = true")
             println("precision is $precision")
+            y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
+            write(y,"Stable, islandcheck is true\n")
+            close(y)
         else
             #islandcheck = false
             #a1 = a1/divfactor
@@ -96,6 +108,9 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
                 a1 = a1/divfactor
                 println("                    stab 1 counter <4")
                 println("new a1 is $a1")
+                y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
+                write(y,"Stable, counter less than 4\n")
+                close(y)
             else #in this case, we have an unstable system
                 println("test unstable")
                 counter = 0
@@ -106,9 +121,17 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
                 a1 = a1/divfactor
                 println("                       stab 0")
                 println("new a1 is $a1")
+                y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
+                write(y,"Unstable\n")
+                close(y)
             end
             println("precision is $precision")
         end
+        y = open("Total_$([m[1],m[2],m[3],a2,theta,percent]).txt","a") #creating file to record outputs, "a" means append
+        write(y,"final\n")
+        write(y,"a1 is $a1, stability is $stability, counter is $counter, a2 is $a2\n")
+        write(y,"maxstable is $maxstable, minunstable is $minunstable, divfactor is $divfactor, precision is $precision\n")
+        close(y)
         #=
         rm("Test_$([m[1],m[2],m[3],a1,a2]).txt") #deleting the input .txt file
         if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
