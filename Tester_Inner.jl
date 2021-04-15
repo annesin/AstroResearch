@@ -17,7 +17,7 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
     end
     println("t is $t")
     println("G is $G")
-    #gr = 1.135((t/(10^9))*m[1]*m[2]*(m[1]+m[2]))^(1/4) #GR CONDITION: assuming e = 0, t in gigayears?
+    #gr = 1.135((t/(10^9))*m[1]*m[2]*(m[1]+m[2]))^(1/4) #GR CONDITION: assuming e = 0, t in Megayears
     a1 = .5*a2
     stability = 0 
     diff = a1 #the differences between consecutive guesses

@@ -78,14 +78,6 @@ function massloop_time(m, a2, theta=0, P=5, t="10000P", hParam=0.01, fileSave="A
     timelist = split(t, "P") #note: split removes the P
     while M1 <= M2 +.1 #fudge factor so that will get to equivalent state
         M = [M1,M2,Md]
-        if t[end] == 'P' #check that this does not depend on theta
-            time = sqrt((a2)^3*(4*pi^2)/(G*(M1+M2+Md)))*parse(Float64, timelist[1])
-            notPeriods = timelist[1]*timelist[2]
-        else
-            time = parse(Float64,timelist[1])
-            notPeriods = true
-        end
-        #gr = 1.135((time/(10^9))*M1*M2*(M1+M2))^(1/4) #GR CONDITION: assuming e = 0, time in gigayears?
         a1 = StabilityFinder2(M, a2, theta, P, t, hParam, fileSave)
         grtime = ((a1/1.135)^4)/(M1*M2*(M1+M2))
         stabletuple = (M1, M2, a1, grtime)
