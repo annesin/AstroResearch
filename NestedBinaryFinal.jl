@@ -55,13 +55,13 @@ function fileInput(file) #change initial conditions to m1, m2, semi-major axis, 
 end
 
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
-function System(file, fileSave, Break, MemorySave=true)
+function System(file, fileSave, Break, MemorySave="hybrid")
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
+	#For MemorySave, "none" means it saves all data points, "hybrid" means it saves significant ones, and "total" means it records no data points
 	f, x, m, t, hParam, percent, numBodies, periods = fileInput(file) #gets info from file
 
 	if percent>1 #Here, we standardize what percent means
 		println(Crayon(foreground=(255,0,0)),"Note that this will run with 0.0"*chop(chop("$percent"))*", not "*"$percent"*", to check for stability.")
-		print(Crayon(foreground=(255,255,255)),"")
 		percent *= 0.01
 	end
 
@@ -222,7 +222,8 @@ function System(file, fileSave, Break, MemorySave=true)
 	#until the desired time has been reached, the code runs RK4
 	counter=0
 	#sees how many timesteps are in one inner binary orbital period
-	if MemorySave
+	stepSave = 1
+	if MemorySave == "hybrid"
 		while t0 < Iperiod
 			x = RK4(f, x, m, h)
 			R₁₂X = x[1]-x[7] #no real need to define the actual R's and V's here, since we're only looking at calculating h
@@ -266,22 +267,210 @@ function System(file, fileSave, Break, MemorySave=true)
 		end
 
 		stepSave=convert(Int64,round(counter/100))
-		println("The period of the inner binary is $(Iperiod), which takes $counter timesteps to simulate, so we'll save every $(stepSave)th timestep.")
+		println(Crayon(foreground=(255,255,255)),"The period of the inner binary is $(Iperiod), which takes $counter timesteps to simulate, so we'll save every $(stepSave)th timestep.")
 		t0=0
 		x=x1
 		counter = 0
-	else
-		stepSave = 1
+	elseif MemorySave == "none"
+		println(Crayon(foreground=(255,0,0)),"Saving every timestep. This may take a while...")
+	elseif MemorySave == "all"
+		println(Crayon(foreground=(0,255,0)),"Not saving any data. Going at maximum speed!")
 	end
+	print(Crayon(foreground=(255,255,255)),"")
 	prog = Progress(convert(Int,ceil(t)),0.5)
 	stability = 1.5
-	open("data_files/$fileSave"*".txt","w") do datafile
-		write(datafile,"$(convert(Int64,numBodies))","\n")
-		if numBodies == 3 
-			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n") #all the zeros are due to there being 0 deviation from the initial calculation,  by definition
-		else
-			write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
+	if MemorySave != "all"
+		open("data_files/$fileSave"*".txt","w") do datafile
+			write(datafile,"$(convert(Int64,numBodies))","\n")
+			if numBodies == 3 
+				write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15])","\n") #all the zeros are due to there being 0 deviation from the initial calculation,  by definition
+			else
+				write(datafile,"0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $h, 0, $(x[1]), $(x[7]), $(x[13]), $(x[2]), $(x[8]), $(x[14]), $(x[3]), $(x[9]), $(x[15]), $(x[19]), $(x[20]), $(x[21])","\n")
+			end
+			firstTime = time()
+			while t0 < t
+				#we will add an adaptive timestep later
+				x = RK4(f, x, m, h)
+				R₁X = x[1]
+				R₁Y = x[2]
+				R₁Z = x[3]
+				V₁X = x[4]
+				V₁Y = x[5]
+				V₁Z = x[6]
+				R₂X = x[7]
+				R₂Y = x[8]
+				R₂Z = x[9]
+				V₂X = x[10]
+				V₂Y = x[11]
+				V₂Z = x[12]
+				R₃X = x[13]
+				R₃Y = x[14]
+				R₃Z = x[15]
+				V₃X = x[16]
+				V₃Y = x[17]
+				V₃Z = x[18]
+				R₁₂X = R₁X-R₂X
+				R₁₂Y = R₁Y-R₂Y
+				R₁₂Z = R₁Z-R₂Z
+				R₁₃X = R₁X-R₃X
+				R₁₃Y = R₁Y-R₃Y
+				R₁₃Z = R₁Z-R₃Z
+				R₂₃X = R₂X-R₃X
+				R₂₃Y = R₂Y-R₃Y
+				R₂₃Z = R₂Z-R₃Z
+				V₁₂X = V₁X-V₂X
+				V₁₂Y = V₁Y-V₂Y
+				V₁₂Z = V₁Z-V₂Z
+				V₁₃X = V₁X-V₃X
+				V₁₃Y = V₁Y-V₃Y 
+				V₁₃Z = V₁Z-V₃Z
+				V₂₃X = V₂X-V₃X
+				V₂₃Y = V₂Y-V₃Y 
+				V₂₃Z = V₂Z-V₃Z
+				K = .5*m[1]*(V₁X^2+V₁Y^2+V₁Z^2)+.5*m[2]*(V₂X^2+V₂Y^2+V₂Z^2)+.5*m[3]*(V₃X^2+V₃Y^2+V₃Z^2) #overall kinetic energy
+				U = -(G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)+G*m[1]*m[3]/sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)+G*m[2]*m[3]/sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)) #total gravitational potential energy
+				E = K + U #total energy 
+				E = (E-E0)/E0
+				LX = m[1]*(R₁Y*V₁Z-R₁Z*V₁Y)+m[2]*(R₂Y*V₂Z-R₂Z*V₂Y)+m[3]*(R₃Y*V₃Z-R₃Z*V₃Y)
+				LY = m[1]*(R₁Z*V₁X-R₁X*V₁Z)+m[2]*(R₂Z*V₂X-R₂X*V₂Z)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
+				LZ = m[1]*(R₁X*V₁Y-R₁Y*V₁X)+m[2]*(R₂X*V₂Y-R₂Y*V₂X)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
+				L = sqrt(LX^2+LY^2+LZ^2)
+				L = (L-L0)/L0
+				if L > Lmax
+					LmaxX = LX
+					LmaxY = LY
+					LmaxZ = LZ
+					Lmax = L
+				elseif L < Lmin
+					LminX = LX
+					LminY = LY
+					LminZ = LZ 
+					Lmin = L
+				end
+				if E > Emax
+					Emax = E
+				elseif E < Emin
+					Emin = E
+				end
+				t0 = t0 + h #advances time, should this be defined by after the next few lines?
+				h1 = sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)/sqrt(V₁₂X^2+V₁₂Y^2+V₁₂Z^2)
+				h2 = sqrt(R₁₃X^2+R₁₃Y^2+R₁₃Z^2)/sqrt(V₁₃X^2+V₁₃Y^2+V₁₃Z^2)
+				h3 = sqrt(R₂₃X^2+R₂₃Y^2+R₂₃Z^2)/sqrt(V₂₃X^2+V₂₃Y^2+V₂₃Z^2)
+				if h1 < h2
+					if h1 < h3
+						h = hParam*h1
+					else
+						h = hParam*h3
+					end
+				else
+					if h2 < h3
+						h = hParam*h2
+					else
+						h = hParam*h3
+					end
+				end #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+				if counter%stepSave == 0 || L > 10^-3 || L < -10^-3 || E > 10^-3 || E < -10^-3 || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || L₁0 < L₁min || L₁0 > L₁max|| L₂0 > L₂max || L₂0 < L₂min
+					#println([counter%stepSave==0,L>Lmax,L<Lmin,E>Emax,E<Emin,h>lmax,h<lmin,E₁>E₁max,E₁<E₁min,E₂>E₂max,E₂<E₂min,sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max,sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min,sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max,sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min])
+					LX = (LX-LX0)/LX0
+					LY = (LY-LY0)/LY0
+					LZ = (LZ-LZ0)/LZ0
+					VINCMX = (m[1]*V₁X+m[2]*V₂X)/(m[1]+m[2]) #velocity of inner center of mass
+					VINCMY = (m[1]*V₁Y+m[2]*V₂Y)/(m[1]+m[2]) #velocity of inner center of mass
+					VINCMZ = (m[1]*V₁Z+m[2]*V₂Z)/(m[1]+m[2]) #velocity of inner center of mass
+					CM₁₂X = (M1*R₁X+M2*R₂X)/(M1+M2)
+					CM₁₂Y = (M1*R₁Y+M2*R₂Y)/(M1+M2)
+					CM₁₂Z = (M1*R₁Z+M2*R₂Z)/(M1+M2)
+					E₁ = .5*m[1]*sqrt((V₁X-VINCMX)^2+(V₁Y-VINCMY)^2+(V₁Z-VINCMZ)^2)^2+.5*m[2]*sqrt((V₂X-VINCMX)^2+(V₂Y-VINCMY)^2+(V₂Z-VINCMZ)^2)^2 - G*m[1]*m[2]/sqrt(R₁₂X^2+R₁₂Y^2+R₁₂Z^2)#Energy of inner binary
+					E₂ = .5*(m[1]+m[2])*sqrt(VINCMX^2+VINCMY^2+VINCMZ^2)^2+.5*m[3]*sqrt(V₃X^2+V₃Y^2+V₃Z^2)^2 - G*(m[1]+m[2])*m[3]/(sqrt((R₃X)^2+(R₃Y)^2+(R₃Z)^2)+sqrt((CM₁₂X)^2+(CM₁₂Y)^2+(CM₁₂Z)^2))#Energy of outer binary we don't normalize these now because we need to determine stability of the system
+					#E₁ = (E₁-E₁0)/E₁0
+					#E₂ = (E₂-E₂0)/E₂0
+					L₁X = m[1]*((R₁Y-CM₁₂Y)*(V₁Z-VINCMZ)-(R₁Z-CM₁₂Z)*(V₁Y-VINCMY))+m[2]*((R₂Y-CM₁₂Y)*(V₂Z-VINCMZ)-(R₂Z-CM₁₂Z)*(V₂Y-VINCMY))
+					L₁Y = m[1]*((R₁Z-CM₁₂Z)*(V₁X-VINCMX)-(R₁X-CM₁₂X)*(V₁Z-VINCMZ))+m[2]*((R₂Z-CM₁₂Z)*(V₂X-VINCMX)-(R₂X-CM₁₂X)*(V₂Z-VINCMZ))
+					L₁Z = m[1]*((R₁X-CM₁₂X)*(V₁Y-VINCMY)-(R₁Y-CM₁₂Y)*(V₁X-VINCMX))+m[2]*((R₂X-CM₁₂X)*(V₂Y-VINCMY)-(R₂Y-CM₁₂Y)*(V₂X-VINCMX))
+					L₂X = (m[1]+m[2])*(CM₁₂Y*VINCMZ-CM₁₂Z*VINCMY)+m[3]*(R₃Y*V₃Z-R₃Z*V₃Y)
+					L₂Y = (m[1]+m[2])*(CM₁₂Z*VINCMX-CM₁₂X*VINCMZ)+m[3]*(R₃Z*V₃X-R₃X*V₃Z)
+					L₂Z = (m[1]+m[2])*(CM₁₂X*VINCMY-CM₁₂Y*VINCMX)+m[3]*(R₃X*V₃Y-R₃Y*V₃X)
+					L₁ = sqrt(L₁X^2+L₁Y^2+L₁Z^2)
+					#L₁ = (L₁-L₁0)/L₁X0
+					L₂ = sqrt(L₂X^2+L₂Y^2+L₂Z^2)
+					#L₂ = (L₂-L₂0)/L₂0
+					#=L₁X = (L₁X-L₁X0)/L₁X0
+					L₁Y = (L₁Y-L₁Y0)/L₁Y0 
+					L₁Z = (L₁Z-L₁Z0)/L₁Z0
+					L₂X = (L₂X-L₂X0)/L₂X0
+					L₂Y = (L₂Y-L₂Y0)/L₂Y0
+					L₂Z = (L₂Z-L₂Z0)/L₂Z0=#
+					if Break
+						if sqrt((CM₁₂X-R₃X)^2+(CM₁₂X-R₃X)^2+(CM₁₂X-R₃X)^2)>2*InitialSep
+							break
+						end
+					end
+					if numBodies == 3 
+						write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃X, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z","\n")
+					else
+						write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃X, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z, $(x[19]), $(x[20]), $(x[21])","\n")
+					end
+					if h > lmax
+						lmax = h
+					elseif h < lmin
+						lmin = h
+					end
+					if E₁ > E₁max
+						E₁max = E₁
+					elseif E₁ < E₁min
+						E₁min = E₁
+					end
+					if E₂ > E₂max
+						E₂max = E₂
+					elseif E₂ < E₂min
+						E₂min = E₂
+					end
+					if L₁ > L₁max 
+						L₁max = L₁
+					elseif L₁ < L₁min
+						L₁min = L₁
+					end
+					if L₂ > L₂max
+						L₂max = L₂
+					elseif L₂ < L₂min 
+						L₂min = L₂ 
+					end
+				end
+				#=h1 = hParam*(minimum([norm(R₁₂)/norm(V₁₂),norm(R₁₃)/norm(V₁₃),norm(R₂₃)/norm(V₂₃)])) #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
+				if h != h1
+					println([h1,h])
+				end=#
+				if abs(L₂min) > (1.0 + percent)*abs(L₂0) ||  (1.0 + percent)*abs(L₂0) < abs(L₂max)
+					println("This is an unstable system! Angular momentum of the outer binary was not conserved.")
+					stability = 0
+				elseif abs(L₁min) > (1.0 + percent)*abs(L₁0) ||  (1.0 + percent)*abs(L₁0) < abs(L₁max)
+					println("This is an unstable system! Angular momentum of the inner binary was not conserved.")
+					stability = 0
+				elseif abs(E₂min) > (1.0 + percent)*abs(E₂0) ||  (1.0 + percent)*abs(E₂0) < abs(E₂max)
+					println("This is an unstable system! Energy of the outer binary was not conserved.")
+					stability = 0
+				elseif abs(E₁min) > (1.0 + percent)*abs(E₁0) ||  (1.0 + percent)*abs(E₁0) < abs(E₁max)
+					println("This is an unstable system! Energy of the inner binary was not conserved.")
+					stability = 0
+				end
+				if counter%10000 == 0
+					update!(prog,convert(Int64,floor(t0)))
+				end
+				counter += 1
+			end
+			if stability != 0
+				println("This is a stable system!")
+				stability == 1
+			end
+			NowTime = time()
+			write(datafile,"$t0","\n")
+			write(datafile,"$stability","\n")
+			write(datafile,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
+			write(datafile,"$counter","\n")
+			write(datafile,"$(NowTime-firstTime)","\n")
+			write(datafile,"N")
 		end
+	else
 		firstTime = time()
 		while t0 < t
 			#we will add an adaptive timestep later
@@ -364,7 +553,7 @@ function System(file, fileSave, Break, MemorySave=true)
 					h = hParam*h3
 				end
 			end #this calculates the initial timestep, later this will tie into the energy of the system, once that's implemented
-			if counter%stepSave == 0 || L > 10^-3 || L < -10^-3 || E > 10^-3 || E < -10^-3 || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || L₁0 < L₁min || L₁0 > L₁max|| L₂0 > L₂max || L₂0 < L₂min
+			if L > 10^-3 || L < -10^-3 || E > 10^-3 || E < -10^-3 || h > lmax || h < lmin || E₁ > E₁max || E₁ < E₁min || E₂ > E₂max || E₂ < E₂min || L₁0 < L₁min || L₁0 > L₁max|| L₂0 > L₂max || L₂0 < L₂min
 				#println([counter%stepSave==0,L>Lmax,L<Lmin,E>Emax,E<Emin,h>lmax,h<lmin,E₁>E₁max,E₁<E₁min,E₂>E₂max,E₂<E₂min,sqrt(L₁X^2+L₁Y^2+L₁Z^2) > L₁max,sqrt(L₁X^2+L₁Y^2+L₁Z^2) < L₁min,sqrt(L₂X^2+L₂Y^2+L₂Z^2) > L₂max,sqrt(L₂X^2+L₂Y^2+L₂Z^2) < L₂min])
 				LX = (LX-LX0)/LX0
 				LY = (LY-LY0)/LY0
@@ -400,11 +589,6 @@ function System(file, fileSave, Break, MemorySave=true)
 						break
 					end
 				end
-				if numBodies == 3 
-					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃X, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z","\n")
-				else
-					write(datafile,"$E, $LX, $LY, $LZ, $E₁, $E₂, $L₁X, $L₁Y, $L₁Z, $L₂X, $L₂Y, $L₂Z, $h, $t0, $R₁X, $R₂X, $R₃X, $R₁Y, $R₂Y, $R₃Y, $R₁Z, $R₂Z, $R₃Z, $(x[19]), $(x[20]), $(x[21])","\n")
-				end
 				if h > lmax
 					lmax = h
 				elseif h < lmin
@@ -435,37 +619,31 @@ function System(file, fileSave, Break, MemorySave=true)
 			if h != h1
 				println([h1,h])
 			end=#
+			if abs(L₂min) > (1.0 + percent)*abs(L₂0) ||  (1.0 + percent)*abs(L₂0) < abs(L₂max)
+				println("This is an unstable system! Angular momentum of the outer binary was not conserved.")
+				stability = 0
+			elseif abs(L₁min) > (1.0 + percent)*abs(L₁0) ||  (1.0 + percent)*abs(L₁0) < abs(L₁max)
+				println("This is an unstable system! Angular momentum of the inner binary was not conserved.")
+				stability = 0
+			elseif abs(E₂min) > (1.0 + percent)*abs(E₂0) ||  (1.0 + percent)*abs(E₂0) < abs(E₂max)
+				println("This is an unstable system! Energy of the outer binary was not conserved.")
+				stability = 0
+			elseif abs(E₁min) > (1.0 + percent)*abs(E₁0) ||  (1.0 + percent)*abs(E₁0) < abs(E₁max)
+				println("This is an unstable system! Energy of the inner binary was not conserved.")
+				stability = 0
+			end
 			if counter%10000 == 0
 				update!(prog,convert(Int64,floor(t0)))
 			end
 			counter += 1
 		end
-		println("\n")
-		if abs(L₂min) > (1.0 + percent)*abs(L₂0) ||  (1.0 + percent)*abs(L₂0) < abs(L₂max)
-			println("This is an unstable system! Angular momentum of the outer binary was not conserved.")
-			stability = 0
-		elseif abs(L₁min) > (1.0 + percent)*abs(L₁0) ||  (1.0 + percent)*abs(L₁0) < abs(L₁max)
-			println("This is an unstable system! Angular momentum of the inner binary was not conserved.")
-			stability = 0
-		elseif abs(E₂min) > (1.0 + percent)*abs(E₂0) ||  (1.0 + percent)*abs(E₂0) < abs(E₂max)
-			println("This is an unstable system! Energy of the outer binary was not conserved.")
-			stability = 0
-		elseif abs(E₁min) > (1.0 + percent)*abs(E₁0) ||  (1.0 + percent)*abs(E₁0) < abs(E₁max)
-			println("This is an unstable system! Energy of the inner binary was not conserved.")
-			stability = 0
-		else
+		if stability != 0
 			println("This is a stable system!")
-			stability = 1
+			stability == 1
 		end
 		NowTime = time()
-		write(datafile,"$t0","\n")
-		write(datafile,"$stability","\n")
-		write(datafile,"$m"[2:end-1],"\n","$OriginalX"[2:end-1],"\n")
-		write(datafile,"$counter","\n")
-		write(datafile,"$(NowTime-firstTime)","\n")
-		write(datafile,"N")
 	end
-	return hParam, t0, periods, counter, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax
+	return m, OriginalX, numBodies, NowTime-firstTime, hParam, t0, periods, counter, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax
 end
 
 function RK4(f,x,m,h)
@@ -510,14 +688,10 @@ writeData is optional. Unless something other than 0 is its input, it will write
 fileSave is optional. However, if a string is entered, for example, "Sample.txt", then a .txt file will be created that will store the system's data. This file can then be plotted using ExternalPlotter.jl without needing to recalculate the system again.
 equal is also optional. Plot() equalizes the axes of the trajectories by default. If anything besides 0 is its input, it will not do this.
 """
-function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=true) #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
+function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave="hybrid") #plotting L, E, or positions over time, type "L" or "E" to plot those and type a color to plot the orbits
 	#Elist, Llist, lList, Tlist, X1, X2, X3, X4, Y1, Y2, Y3, Y4, Z1, Z2, Z3, Z4, numBodies, hParam, v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, OriginalX, t0, E₁list, E₂list, L₁list, L₂list, periods, timesteps = System(file, fileSave, MemorySave)
-	hParam, t0, periods, timesteps, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax = System(file, fileSave, Break, MemorySave)
-	datafile = "data_files/$fileSave"*".txt"
-	m = parse.(Float64,split(readlines(datafile)[end-4],",")) #keep
-	OriginalX = parse.(Float64,split(readlines(datafile)[end-3],",")) #keep
-	numBodies = parse.(Float64,split(readlines(datafile)[1],","))[1]
-	timeTaken = parse(Float64,readlines(datafile)[end-1])
+	m, OriginalX, numBodies, timeTaken, hParam, t0, periods, timesteps, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax = System(file, fileSave, Break, MemorySave)
+
 	#=stability calculation=#
 	println("\n")
 	println("$t0 days later...")
