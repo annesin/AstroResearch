@@ -31,11 +31,11 @@ function rotationStabilityFinder(m, a, angles, percent, ask=true, t="1000P", hPa
             write(x,"$t,$hParam, $percent")
             close(x)
             println("The parameters here are masses $m, separations $a1 and $a2, angular offset of $theta degrees, with zero eccentricity or inclination.")
-            record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2,theta]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2,theta])") #run simulation, get stability. Note that we're saving stuff for the heck of it
+            record, dataFileExists, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2,theta]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2,theta])") #run simulation, get stability. Note that we're saving stuff for the heck of it
             rm("Test_$([m[1],m[2],m[3],a1,a2,theta]).txt") #deleting the input .txt file
-            if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
+            if record && dataFileExists #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
                 mv("data_files/AutoSave_$([m[1],m[2],m[3],a1,a2,theta]).txt","data_files/$fileSave"*"_$rowNumber"*".txt", force=true)
-            else
+            elseif dataFileExists
                 rm("data_files/AutoSave_$([m[1],m[2],m[3],a1,a2,theta]).txt")#deletes text file if data wasn't recorded in spreadsheet
             end
         end

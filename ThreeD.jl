@@ -13,11 +13,11 @@ function ThreeDSF(m, a1, I, t="100P", hParam=0.01, fileSave="AutoSave")
         write(x,"$t,$hParam")
         close(x)
         println("The parameters here are masses $m, separations $a1 and $a2, inclination $I and zero eccentricity or angular offset.")
-        record, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2,I]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2,I])") #run simulation, get stability. Note that we're saving stuff for the heck of it
+        record, dataFileExists, rowNumber, stability = Master("Test_$([m[1],m[2],m[3],a1,a2,I]).txt",true,"AutoSave_$([m[1],m[2],m[3],a1,a2,I])") #run simulation, get stability. Note that we're saving stuff for the heck of it
         rm("Test_$([m[1],m[2],m[3],a1,a2,I]).txt") #deleting the input .txt file
-        if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
+        if record && dataFileExists #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
             mv("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2,I]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
-        else
+        elseif dataFileExists
             rm("h≈(r÷v) data files/AutoSave_$([m[1],m[2],m[3],a1,a2,I]).txt")#deletes text file if data wasn't recorded in spreadsheet
         end
         if stability == 1 && counter >= 4 #this is the case if we have a stable system after 5 consecutive checks

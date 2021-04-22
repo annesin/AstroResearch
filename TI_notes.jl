@@ -38,14 +38,14 @@ function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSav
         close(x)
 
         ### Find stability ###
-        record, rowNumber, stability = Master("TestIn_$([m[1],m[2],m[3],a1,a2,theta]).txt",true,"AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta])") #run simulation, get stability. Note that we're saving stuff for the heck of it
+        record, dataFileExists, rowNumber, stability = Master("TestIn_$([m[1],m[2],m[3],a1,a2,theta]).txt",true,"AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta])") #run simulation, get stability. Note that we're saving stuff for the heck of it
         
         ### Removing file and recording information
         rm("TestIn_$([m[1],m[2],m[3],a1,a2,theta]).txt") #deleting the input .txt file
-        if record #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
+        if record && dataFileExists #if the data was saved in the spreadsheet, we save the output .txt file with the corresponding row number. If it wasn't, we delete the output .txt file.
             #use h≈(r÷v) data files on copernicus, data_files locally
             mv("h≈(r÷v) data files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt","h≈(r÷v) data files/$fileSave"*"_$rowNumber"*".txt", force=true)
-        else
+        elseif dataFileExists
             rm("h≈(r÷v) data files/AutoSaveIn_$([m[1],m[2],m[3],a1,a2,theta]).txt")#deletes text file if data wasn't recorded in spreadsheet
         end
 

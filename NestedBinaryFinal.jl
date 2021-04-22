@@ -57,7 +57,7 @@ end
 "Inputs a file (that is a triple system) and numerically calculates the system's energy and angular momentum versus time, as well as the bodies' positions versus time."
 function System(file, fileSave, Break, MemorySave="hybrid")
 	#this is the main function that integrates with RK4 and returns the final positions (as well as arrays with information we can plot)
-	#For MemorySave, "none" means it saves all data points, "hybrid" means it saves significant ones, and "total" means it records no data points
+	#For MemorySave, "none" means it saves all data points, "hybrid" means it saves significant ones, and "all" means it records no data points
 	f, x, m, t, hParam, percent, numBodies, periods = fileInput(file) #gets info from file
 
 	if percent>1 #Here, we standardize what percent means
@@ -453,6 +453,9 @@ function System(file, fileSave, Break, MemorySave="hybrid")
 					println("This is an unstable system! Energy of the inner binary was not conserved.")
 					stability = 0
 				end
+				if stability == 0
+					break
+				end
 				if counter%10000 == 0
 					update!(prog,convert(Int64,floor(t0)))
 				end
@@ -632,6 +635,9 @@ function System(file, fileSave, Break, MemorySave="hybrid")
 				println("This is an unstable system! Energy of the inner binary was not conserved.")
 				stability = 0
 			end
+			if stability == 0
+				break 
+			end
 			if counter%10000 == 0
 				update!(prog,convert(Int64,floor(t0)))
 			end
@@ -704,6 +710,7 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave="
 	println("The outer binary energy was $E₂0 and varied from $E₂min to $E₂max")
 	println("The outer binary momentum was $L₂0 and varied from $L₂min to $L₂max")
 	record = true
+	dataFileExists = true
 	rowNumber = 0
 	if writeData == 0
 		XLSX.openxlsx("NestedBinaryData.xlsx",mode="rw") do xf
@@ -752,7 +759,10 @@ function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave="
 			end
 		end
 	end
-	return record, rowNumber, stability #used for autotester
+	if MemorySave=="all"
+		dataFileExists = false
+	end
+	return record, dataFileExists, rowNumber, stability #used for autotester
 end
 
 function f0(x::Array{Float64,1}) #DE for Masses
