@@ -1,0 +1,258 @@
+function fileinput(file)
+-takes a file and gets the information from information
+#14-23: finds mass and positions by parsing file
+#25-34: creates array of functions to apply for Runge Kutta
+#35-42: find time, and whether in terms of periods or not
+#45-46: find hParam and percent
+
+
+
+function System(file, fileSave, Break)
+-takes a file and finds triple's engery, angular momentum, and position, all vs. time
+#50-66: finds constants and initial conditions from fileinput
+#53: assigns another name to the x array
+#68-81: find initial positions from thesis formulae
+#83-91: reassigns x's for some reason
+#92-95: finds centers of mass and aOB
+#96-104: finds separations
+#105-120: finds velocities from appendix equation
+#121-129: finds relative velocities
+#130-132: finds velocities of center of mass of inner binary
+#134-148: finds initial energies and angular momenta
+#150: sets time to 0
+#152-176: create extrema for angular momentum and energy, sets them to 0
+#178-180: define h's as separation (or position) over relative velocity, units of time - timestep multipliers
+        #note: greater separation, smaller velocity means greater timestep
+        #      smaller separation, greater velocity means smaller timestep
+#181-193: multiply hParam by smallest of h1,h2,h3, set equal to h
+#195-196: lmax, lmin set to h - what are they???
+#199: finds inner binary period
+#201-205: creates array of positions and velocities, sets to x and x1
+#206-259: runs Runge Kutta through one period to find number of timesteps in one period
+#MemorySave???
+#210-250: while time is less than one inner binary period
+        #211: run Runge Kutta on the positions and velocities
+        #212-229: find new relative velocities from the Runge Kutta
+        #231: advance time by one h
+        #233-235: change h's by multiplying hParam by separation over velocity
+        #236-247: set smallest of h1,2,3 equal to h
+                #note: this is the same type of quantity of h as earlier, but multiplies by hParam earlier
+        #249: add 1 to counter
+#252: set stepSave to 1% of the counter
+        #note: uses round, which tiebreaks to the nearest even integer
+#254: reset t0 to 0
+        #note: this is after while loop breaks when t0> Iperiod
+#255-256: resets counter to 0, x to what it originally was???
+#257-258: if MemorySave is off, set stepSave to 1
+#260: track progress
+#261: create stability variable
+#262-???
+#263-268: edit the datafile
+#269: records the start of the time count
+#270-426: while t0<t
+        #272: run Runge Kutta on x: positions and velocities
+                #note: x has apparently been reset
+        #273-290: update positions and velocities from Runge Kutta results
+        #291-308: update relative positions and velocities
+        #309-311: find kinetic, potential, and total energy
+        #312: set E (total energy) to percent error from original energy, E0 
+        #313-316: find components of angular momenta and total L
+        #317: set L to error from L0, original L total
+        #318-328: if L is at extrema, reset either Lmax's or Lmin's to new L's 
+        #329-333: if E is at extrema, reset either Emax or Emin to new E 
+        #334: advance time by one timestep
+        #335-350: update timestep parameters as earlier
+        #if stepSave is a factor of counter OR the angular momentum has diverged OR the energy has diverged OR h has diverged
+                #353-381: recalculate angular momentum, velocities of centers of mass, centers of mass, energy
+                #382-386: what is Break? 
+                        #what the heck is this
+                #387-391: edit the datafile
+                #392-416: if h, E, or L is an extrema, reset the min/max
+        #422-425: if 10,000 is a factor of counter, update the progress bar 
+#428-443: evaluate stability   
+        #but why would it be unstable if L min is > something? - can't be smaller than L0
+#444: record end of time
+#445-450: edit the datafile
+#return hParam, t0, periods, counter, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax
+
+
+function RK4(f,x,m,h)
+#458: find the length of the array of functions
+#462-465: set the runge kutta parameters to zero, making arrays of parameters
+#469-480: calculate the runge kutta parameters for every function in f
+        #loops through the functions, multiplies the timestep by the result
+#483-484: calculate and return the stepSave
+
+
+function Master(file, Break=true, fileSave="AutoSave", writeData=0, MemorySave=true)
+#499: gets information from System
+#500: creates datafile
+#501-504: gets information from input file
+#506-515: print information from System
+#516-517: set variables to prepare to record in datafile
+#518: if writeData == 0:
+        #519-529: open the file and prepare to write in it
+        #530-564: record masses, original x parameters, hParam, extrema, time, stability, and timesteps
+#565: return record, rowNumber, stability
+
+###RK4 functions###
+x=[X1,Y1,Z1,V₁X,V₁Y,V₁Z,X2,Y2,Z2,V₂X,V₂Y,V₂Z,X3,Y3,Z3,V₃X,V₃Y,V₃Z]
+
+f0:
+#0
+
+f1A:
+#x[4]=V₁X
+
+f1B:
+#x[10]=V₂X 
+
+f1C:
+#x[16]=V₃X
+
+f1D:
+#x[22] - test particle
+
+f2A:
+#x[5]=V₁Y
+
+f2B:
+#x[11]=V₂Y
+
+f2C:
+#x[17]=V₃Y
+
+f2D:
+#x[23] - test particle
+
+f3A:
+#x[6]=V₁Z
+
+f3B:
+#x[12]=V₂Z
+
+f3C:
+#x[18]=V₃Z
+
+f3D:
+#x[24] - test particle
+
+f4A:
+#acceleration due to gravity in x direction for mass 1
+
+f4B:
+#acceleration due to gravity in x direction for mass 2
+
+f4C:
+#acceleration due to gravity in x direction for mass 3
+
+f4D:
+#acceleration due to gravity in x direction for test particle
+
+f5A:
+#acceleration due to gravity in y direction for mass 1
+
+f5B:
+#acceleration due to gravity in y direction for mass 2
+
+f5C:
+#acceleration due to gravity in y direction for mass 3
+
+f5D:
+#acceleration due to gravity in y direction for test particle
+
+f6A:
+#acceleration due to gravity in z direction for mass 1
+
+f6B:
+#acceleration due to gravity in z direction for mass 2
+
+f6C:
+#acceleration due to gravity in z direction for mass 3
+
+f6D:
+#acceleration due to gravity in z direction for test particle
+
+
+
+
+
+can we rewrite it so that it doesn't need to read a file?
+
+line 51 - f is fArray, list of functions
+line 53 - are OriginalX and x necessary 
+line 55 - m is unnecessary array 
+        - declare types of variables
+
+line 68 - can use . or |??
+
+line 83 - why?
+
+line 152 - not an array, just sets each of those to zero
+
+can we run any of these little calculations in parallel?
+
+line 154 - can't we just set some of these to zero too? are the copies affected later on?
+
+line 209 - what is MemorySave?
+
+line 253 - avoid string interpolation
+
+line 351 - what is that?
+
+function RK4(f,x,m,h)
+line 456 - f,x,m all arrays - declare as arrays?
+
+line 460 - what is f?
+
+Function Master
+
+Function RK4
+line 882: k1[i]=h*f[i](x, m)
+I think that this means the function at f[i] applied to x,m
+
+[7.2,0,14.4,0,0,0],[8.0,8.0,1.0]
+
+Outline of file needed:
+1,2,3
+7.2,0,14.4,0,0,0
+1000P,0.01,5
+
+line 202 x gets reassigned
+
+print comments:
+15
+27
+53
+203
+913
+
+
+Create a new function to get farray?
+
+Changes made to copy:
+added fuction getfarray(x, m)
+
+added Function NewSystem (x, m, t, hParam, percent, numBodies = 3, periods)
+make it also return numBodies, timeTaken
+
+added functions test1 and test2: delete eventually
+
+
+
+
+System: return hParam, t0, periods, counter, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax
+Master from Sys: hParam, t0, periods, timesteps, stability, Emin, Emax, Lmin, LminX, LminY, LminZ, Lmax, LmaxX, LmaxY, LmaxZ, E₁0, E₁min, E₁max, E₂0, E₂min, E₂max, L₁0, L₁min, L₁minX, L₁minY, L₁minZ, L₁max, L₁maxX, L₁maxY, L₁maxZ, L₂0, L₂min, L₂minX, L₂minY, L₂minZ, L₂max, L₂maxX, L₂maxY, L₂maxZ, lmin, lmax = NewSystem(x, m, t, hParam, percent, fileSave, Break, MemorySave=true; periods=true)
+	
+line 680 firstTime = time()
+line 855 NowTime = time()
+
+
+Bottlenecks
+Must be resolved at runtime:
+line 272: calling RK4
+
+
+
+fArray, f1A, f2A, f3A, f4A, f5A, f6A, f1B, f2B, f3B, f4B, f5B, f6B, f1C, f2C, f3C, f4C, f5C, f6C,:: only if four bodies: f1D, f2D, f3D, f4D, f5D, f6D) #these are the functions we need
+	
