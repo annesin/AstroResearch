@@ -1,7 +1,7 @@
 include("Tester_Inner.jl")
+include("Tester_Inner_timesaver.jl")
 
 function massloop_a2(m, a2, theta=0, P=5, t="10000P", hParam=0.01, fileSave="AutoSave")
-    #change to 10000P
     Minner = m[1]
     Md = m[2]
     if m[1] < 1.3
@@ -11,7 +11,7 @@ function massloop_a2(m, a2, theta=0, P=5, t="10000P", hParam=0.01, fileSave="Aut
     end
     M1 = 1.3
     M2 = Minner - 1.3
-    mstep = (.5*Minner-1.3)/4 #create a step to change the mass ratio by
+    mstep = (.5*Minner-1.3)/9 #create a step to change the mass ratio by
     stability = 0
     stabmasslist = [] #will contain tuples of masses, a1 and stability
     timelist = split(t, "P") #note: split removes the P
@@ -62,7 +62,6 @@ end
 
 
 function massloop_time(m, a2, theta=0, P=5, t="10000P", hParam=0.01, fileSave="AutoSave")
-    #change to 10000P
     Minner = m[1]
     Md = m[2]
     if m[1] < 1.3
@@ -101,10 +100,13 @@ function massloop_time(m, a2, theta=0, P=5, t="10000P", hParam=0.01, fileSave="A
         end
     end
     q = stabmasslist[maxindex][1]/stabmasslist[maxindex][2]
+    y = open("TimeLoop_$([m[1],m[2],a2]).txt","a") #creating file to record outputs, "a" means append
+    write(y,"mass ratio is $q, stable mass list is $stabmasslist\n")
+    close(y)
     return q, stabmasslist
 end
 
-function massloop_a1(m, stab_a1, a2, theta=0, P=5, t="10000P", hParam=0.01, fileSave="AutoSave")
+function massloop_preset(m, stab_a1, a2, theta=0, P=5, t="10000P", hParam=0.01, fileSave="AutoSave")
     #stab_a1 is array of a1's
     Minner = m[1]
     Md = m[2]
@@ -119,17 +121,19 @@ function massloop_a1(m, stab_a1, a2, theta=0, P=5, t="10000P", hParam=0.01, file
     stability = 0
     stabmasslist = [] #will contain tuples of masses, a1 and stability
     timelist = split(t, "P") #note: split removes the P
+    j = 1
     while M1 <= M2 +.1 #fudge factor so that will get to equivalent state
         M = [M1,M2,Md]
-        a1 = StabilityFinder2(M, a2, theta, P, t, hParam, fileSave)
+        a1 = StabilityFinder2_preset(M,stab_a1[j], a2, theta, P, t, hParam, fileSave)
         grtime = ((a1/1.135)^4)/(M1*M2*(M1+M2))
         stabletuple = (M1, M2, a1, grtime)
         push!(stabmasslist, stabletuple)
-        y = open("TimeLoop_$([m[1],m[2],a2]).txt","a") #creating file to record outputs, "a" means append
+        y = open("TimeLoop_preset$([m[1],m[2],a2]).txt","a") #creating file to record outputs, "a" means append
         write(y,"a1 is $a1, spiral-in time is $grtime\n")
         close(y)
         M1 += mstep
         M2 = Minner - M1
+        j += 1
     end
     #find the maximum spiral-in time
     maxa1 = 0
@@ -144,5 +148,8 @@ function massloop_a1(m, stab_a1, a2, theta=0, P=5, t="10000P", hParam=0.01, file
         end
     end
     q = stabmasslist[maxindex][1]/stabmasslist[maxindex][2]
+    y = open("TimeLoop_preset$([m[1],m[2],a2]).txt","a") #creating file to record outputs, "a" means append
+    write(y,"mass ratio is $q, stable mass list is $stabmasslist\n")
+    close(y)
     return q, stabmasslist
 end
