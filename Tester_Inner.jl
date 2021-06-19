@@ -1,5 +1,5 @@
 #include("NestedBinary_updated.jl") 
-include("NestedBinaryFinal.jl")
+include("NestedBinaryFinal_Fast.jl")
 #include("NestedBinary_Ben.jl")
 
 function StabilityFinder2(m, a2, theta, percent, t="1000P", hParam=0.01, fileSave="AutoSaveIn")

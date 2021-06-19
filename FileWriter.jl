@@ -1,7 +1,7 @@
 #If you just want to run a specific system as a test, this will write the file for 
 #NestedBinaryFinal.jl for you!
 
-include("NestedBinaryFinal.jl")
+include("NestedBinaryFinal_Fast.jl")
 
 function fileWriter(m, a, percent,t = "1000P",hParam = 0.01,fileSave = "AutoSave",MemorySave="hybrid")
     x = open("Test_$([m[1],m[2],m[3],a[1],a[3]]).txt","w") #creating the input file

@@ -1,6 +1,6 @@
 #include("NestedBinaryTrial.jl") 
 #include("NestedBinary_updated.jl")
-include("NestedBinaryFinal.jl")
+include("NestedBinaryFinal_Fast.jl")
 
 function StabilityFinder(m, a1, theta, percent=5, precision=2, t="1000P", MemorySave="all", hParam=0.01, fileSave="AutoSave", writeData=0, startinga2=0)
     #here, m is an stringed array of the masses while a1 is a Float64 that is the inner separation

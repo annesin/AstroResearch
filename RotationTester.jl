@@ -1,4 +1,4 @@
-include("NestedBinaryFinal.jl")
+include("NestedBinaryFinal_Fast.jl")
 include("AutomaticTester.jl")
 ENV["MPLBACKEND"]="qt5agg" #switching the environment in which the packages are imported and run in. If you don't do this, your computer will crash and will not be able to run Julia until it is restarted
 using Pkg
